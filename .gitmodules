@@ -1,0 +1,15 @@
+[submodule "modules/dsh"]
+	path = modules/dsh
+	url = git@github.com:ulricha/dsh.git
+[submodule "modules/dsh-sql"]
+	path = modules/dsh-sql
+	url = git@github.com:ulricha/dsh-sql.git
+[submodule "modules/algebra-sql"]
+	path = modules/algebra-sql
+	url = git@github.com:ulricha/algebra-sql.git
+[submodule "modules/algebra-dag"]
+	path = modules/algebra-dag
+	url = git@github.com:ulricha/algebra-dag.git
+[submodule "modules/dsh-example-queries"]
+	path = modules/dsh-example-queries
+	url = git@github.com:ulricha/dsh-example-queries.git

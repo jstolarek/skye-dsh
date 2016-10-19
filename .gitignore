@@ -1,0 +1,9 @@
+# Cabal build directory
+dist
+
+# Cabal sandboxes
+cabal.sandbox.config
+.cabal-sandbox
+
+# database connection logs
+*.log
