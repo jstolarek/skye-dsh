@@ -112,16 +112,14 @@ create two databases.
 1. Assuming you have already built `dsh-example-queries` (see previous section):
 
    ```
-   ./dist/build/gen-trades/gen-trades
+   ./dist/build/gen-trades/gen-trades -d 5 -s 100 -t 1000
    ./dist/build/gen-flows/gen-flows
    ```
 
-   Note: `gen-trades` generates LOTS of data and takes long. You might consider
-   generating a smaller data set:
-
-   ```
-   ./dist/build/gen-trades/gen-trades -d 5 -s 100 -t 1000
-   ```
+   **Note**: with default setting `gen-trades` generates LOTS of data.  Loading
+     trades generated for 5 days takes several hours.  This is most likely
+     caused by indexing.  According to pgAdmin indices take several times more
+     space than the data itself.
 
 2. Create `trades` and `packets` databases and grant yourself full privileges on
    them.
@@ -139,9 +137,6 @@ create two databases.
    ./load_trades.sh trades /path/to/trades.csv
    ./load_packets.sh packets /path/to/packets.csv
    ```
-
-   **Note**: loading trades generated for 5 days takes several hours.  Perhaps
-     because of indexing?
 
 
 Setting up ODBC connections
