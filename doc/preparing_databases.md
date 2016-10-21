@@ -3,20 +3,41 @@ Preparing PostgreSQL databases for DSH
 
 This document describes how to set up database for the purpose of running
 examples in `dsh-example-queries` package stored as a git submodule in
-`modules/` directory.
+`modules/` directory.  This assumes you are running a local instance of
+PostgreSQL, you have full administrative access to it and are not overly
+concerned with security.
 
 To create a database with PostgreSQL run `psql` command as `postgres` user.  Use
 `su - postgres` as root or `sudo su - postgres` if you're a sudoer. Then on
 the `psql` command prompt:
 
 ```
-postgres=# create database foo;;
+postgres=# CREATE DATABASE foo;
 CREATE DATABASE
-postgres=# grant all privileges on database foo to bar;;
+postgres=# GRANT ALL PRIVILEGES ON DATABASE foo TO bar;
 GRANT
+postgres=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO bar;
 ```
 
 where `foo` is database name and `bar` is database user name.
+
+**Note:** all the `load_*` scripts below use `COPY` SQL statement to insert data
+  from CSV files into a database.  `COPY` requires superuser privileges.  There
+  are two solutions:
+
+  1. Run the scripts as `postgres` database user (this is the default user and
+     has superuser privileges).  To do this run `sudo su - postgres` or `su -
+     postgres` before actually running the `load_*` script.
+
+  2. Grant your database user superuser privileges:
+
+     ```
+     postgres=# ALTER USER bar WITH SUPERUSER;
+     ALTER ROLE
+     ```
+
+In what follows it is assumed that you followed the second approach.  If not,
+remember to run `load_*` scripts as `postgres` user.
 
 
 TPC-H database
@@ -38,8 +59,7 @@ TPC-H database
    repo:
 
    ```
-   cd modules/dsh-example-queries/loading/tpch/pg
-   sudo su - postgres
+   cd loading/tpch/pg
    ./load.sh tpch /path/to/tpch-kit/
    psql -d tpch -a -f add_constraints.sql
    psql -d tpch -a -f additional_indexes.sql
@@ -83,8 +103,7 @@ Shredding database
    repo:
 
    ```
-   cd modules/dsh-example-queries/loading/shredding/pg
-   sudo su - postgres
+   cd loading/shredding/pg
    psql -d shredding -a -f schema_shredding.sql
    psql -d shredding -a -f additional_indexes.sql
    ./load_shredding.sh shredding /path/to/skye-dsh/modules/dsh-example-queries 100
@@ -128,8 +147,7 @@ create two databases.
    repo:
 
    ```
-   cd modules/dsh-example-queries/loading/aquery/pg
-   sudo su - postgres
+   cd loading/aquery/pg
    psql -d trades -a -f trades_schema.sql
    psql -d trades -a -f trades_indexes.sql
    psql -d packets -a -f packets_schema.sql
