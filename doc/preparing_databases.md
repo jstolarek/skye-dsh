@@ -160,7 +160,7 @@ create two databases.
 Setting up ODBC connections
 ---------------------------
 
-To access created databases from Haskell you need to create ODBC connetcions for
+To access created databases from Haskell you need to create ODBC connections for
 them.  This can be done either using a graphical tool (`ODBCManageDataSourcesQ4`
 on Debian 8) or by editing `~/.odbc.ini` file.  Give connections the same name
 as the database they are connecting to.  Use your database user name.
