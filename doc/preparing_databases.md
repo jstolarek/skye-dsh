@@ -157,6 +157,43 @@ create two databases.
    ```
 
 
+PPDP2016 database
+-----------------
+
+These are the databases used by Stefan Fehrenbach and James Cheney for their
+"Language integrated provenance" paper.  Databases are available as SQL dumps as
+part of a [release on Stefan's
+github](https://github.com/fehrenbach/links/releases/tag/ppdp2016-where).  These
+dumps assume `postgres` as the database user.  Below I assume that `bar` is your
+username and that call to `sed` is made to amend database dumps before loading
+them into a database.  Databases are available in different sizes: 4, 8, 16, 32,
+64, 128, 256, 512, 1024, 2048 and 4096.  In the instructions below N represents
+that database size. Substitute it with the size you want to use.
+
+1. CreateCreate `ppdp2016` database and grant yourself full privileges on it.
+
+2. Download a databse dump and modify it to contain your user name instead of
+   default `postgres` user name
+
+   ```
+   wget https://github.com/fehrenbach/links/releases/download/ppdp2016-where/N.sql
+   sed 's/postgres/bar/g' -i N.sql
+   ```
+
+3. Load the database dump:
+
+   ```
+   psql -U bar -d ppdp2016 -f N.sql
+   ```
+
+4. Create indices:
+
+   ```
+   wget https://raw.githubusercontent.com/fehrenbach/links/where/benchmarks/ppdp2016/indices.sql
+   psql -U bar -d ppdp2016 -f indices.sql
+   ```
+
+
 Setting up ODBC connections
 ---------------------------
 
