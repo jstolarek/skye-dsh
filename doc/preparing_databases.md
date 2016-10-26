@@ -17,6 +17,7 @@ CREATE DATABASE
 postgres=# GRANT ALL PRIVILEGES ON DATABASE foo TO bar;
 GRANT
 postgres=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO bar;
+ALTER DEFAULT PRIVILEGES
 ```
 
 where `foo` is database name and `bar` is database user name.
@@ -38,6 +39,10 @@ where `foo` is database name and `bar` is database user name.
 
 In what follows it is assumed that you followed the second approach.  If not,
 remember to run `load_*` scripts as `postgres` user.
+
+It is also assumed that your database user name is identical to your system user
+name.  If not you need to provide your database user name using `-U` option when
+invoking `psql` command.
 
 
 TPC-H database
@@ -157,8 +162,8 @@ create two databases.
    ```
 
 
-PPDP2016 database
------------------
+PPDP2016 databases
+------------------
 
 These are the databases used by Stefan Fehrenbach and James Cheney for their
 "Language integrated provenance" paper.  Databases are available as SQL dumps as
@@ -183,14 +188,25 @@ size. Substitute it with the size you want to use.
 3. Load the database dump:
 
    ```
-   psql -U bar -d ppdp2016 -f N.sql
+   psql -d ppdp2016 -f N.sql
    ```
 
 4. Create indices:
 
    ```
    wget https://raw.githubusercontent.com/fehrenbach/links/where/benchmarks/ppdp2016/indices.sql
-   psql -U bar -d ppdp2016 -f indices.sql
+   psql -d ppdp2016 -a -f indices.sql
+   ```
+
+There is also a very small database used in first few examples of the paper.
+
+1. Create `ppdp2016travels` database and grant yourself full privileges on it.
+
+2. Load the databse schema and data:
+
+   ```
+   cd db/ppdp2016
+   psql -d ppdp2016travels -a -f travel_portal.sql
    ```
 
 
