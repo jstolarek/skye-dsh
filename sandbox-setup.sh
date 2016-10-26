@@ -17,4 +17,3 @@ cabal sandbox add-source modules/algebra-sql
 cabal sandbox add-source modules/dsh
 cabal sandbox add-source modules/dsh-example-queries
 cabal sandbox add-source modules/dsh-sql
-cabal install --dependencies-only
