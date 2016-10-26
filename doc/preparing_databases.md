@@ -165,12 +165,12 @@ These are the databases used by Stefan Fehrenbach and James Cheney for their
 part of a [release on Stefan's
 github](https://github.com/fehrenbach/links/releases/tag/ppdp2016-where).  These
 dumps assume `postgres` as the database user.  Below I assume that `bar` is your
-username and that call to `sed` is made to amend database dumps before loading
-them into a database.  Databases are available in different sizes: 4, 8, 16, 32,
-64, 128, 256, 512, 1024, 2048 and 4096.  In the instructions below N represents
-that database size. Substitute it with the size you want to use.
+username and a call to `sed` is made to amend database dumps before loading
+them.  Databases are available in different sizes: 4, 8, 16, 32, 64, 128, 256,
+512, 1024, 2048 and 4096.  In the instructions below N represents that database
+size. Substitute it with the size you want to use.
 
-1. CreateCreate `ppdp2016` database and grant yourself full privileges on it.
+1. Create `ppdp2016` database and grant yourself full privileges on it.
 
 2. Download a databse dump and modify it to contain your user name instead of
    default `postgres` user name
