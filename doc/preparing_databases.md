@@ -52,7 +52,7 @@ TPC-H database
 
    ```
    git clone https://github.com/gregrahn/tpch-kit
-   cd tpch-kit
+   cd tpch-kit/dbgen
    make
    ./dbgen
    ```
@@ -68,7 +68,6 @@ TPC-H database
    ./load.sh tpch /path/to/tpch-kit/
    psql -d tpch -a -f add_constraints.sql
    psql -d tpch -a -f additional_indexes.sql
-   psql -d tpch -a -f dshifiy-tpch.sql
    ```
 
    The `load.sh` script drops `tpch` database if it existed, which means you

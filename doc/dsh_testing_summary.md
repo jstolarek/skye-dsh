@@ -25,8 +25,20 @@ where `dummy` is an empty database.
 
 ### Results
 
-  - Some tests pass or fail randomly, eg. `Decimal`, `Scientific`.  Moreover, I
-    witnessed these failures:
+  - Some tests pass or fail randomly, eg. `Decimal`, `Scientific`:
+
+    ```
+    Decimal:                             FAIL (0.03s)
+      *** Failed! Assertion failed (after 64 tests and 2 shrinks):
+      (Positive {getPositive = 1},11)
+      Use --quickcheck-replay '63 TFGenR 128A6DDAADB1315EF0329A85F95D79A84BB684F8B056A3577540711A3E58C28C 0 31 5 0' to reproduce.
+    Scientific:                          FAIL (0.02s)
+      *** Failed! Assertion failed (after 38 tests and 1 shrink):
+      (11,-1)
+      Use --quickcheck-replay '37 TFGenR 00000000F8E208E500000000000186A0000000000000E15800000001DCD65000 0 17592186044352 44 0' to reproduce.
+    ```
+
+  - Moreover, I witnessed these failures:
 
     ```
     Equality, Boolean Logic and Ordering
@@ -43,7 +55,11 @@ where `dummy` is an empty database.
         *** Gave up! Passed only 74 tests.
     ```
 
-  - Several tests take ~10 minutes to finish
+    Exact number of failing tests differs between runs, but these failures seem
+    to be reproducable.
+
+  - `deep`, `cartprod_deep` and `cartprod_deep_nested` tests take several
+    minutes to finish
 
   - `partitionEithers` (`Either` test group) suffers from a memory leak.  I
     killed the process after using 14GB of RAM.
@@ -74,52 +90,7 @@ document.
 
 ### Results
 
-Most tests fail.  Q13 takes quite long time to finish.  Q22 does not finish in
-reasonable time (killed after 1h).
-
-```
-TPC-H standard tests
-  q1:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q2:  FAIL
-    Exception: decimalVal: SqlDouble 9938.5302734375
-    CallStack (from HasCallStack):
-      error, called at src/Database/DSH/Backend/Sql/Pg.hs:162:51 in dsh-sql-0.3.0.1-16dwQPqpVig1rFKnsSPbCV:Database.DSH.Backend.Sql.Pg
-  q3:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q4:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q5:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q6:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q7:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q8:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q9:  FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q10: FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q11: OK (0.11s)
-  q12: FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q13: OK (106.23s)
-  q14: FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q15: FAIL
-    message threw an exception: Prelude.chr: bad argument: 5832776
-  q16: OK (2.54s)
-  q17: FAIL
-    Exception: decimalVal: SqlDouble 348406.10714285716
-    CallStack (from HasCallStack):
-      error, called at src/Database/DSH/Backend/Sql/Pg.hs:162:51 in dsh-sql-0.3.0.1-16dwQPqpVig1rFKnsSPbCV:Database.DSH.Backend.Sql.Pg
-  q18: FAIL
-    Exception: dayVal: SqlInt32 765676800
-    CallStack (from HasCallStack):
-      error, called at src/Database/DSH/Backend/Sql/Pg.hs:165:45 in dsh-sql-0.3.0.1-16dwQPqpVig1rFKnsSPbCV:Database.DSH.Backend.Sql.Pg
-  q22:
-```
+Q22 does not finish in reasonable time (killed after ~10 minutes).
 
 
 RunPg
@@ -144,12 +115,4 @@ document.
 
 ### Results
 
-The last of three queries ends with an error.
-
-```
-["Customer#000001701","Customer#000003507","Customer#000010139","Customer#000027363","Customer#000029804","Customer#000029980","Customer#000036470","Customer#000043478","Customer#000047520","Customer#000047648","Customer#000049763","Customer#000055932","Customer#000057767","Customer#000064147","Customer#000066977","Customer#000068578","Customer#000077158","Customer#000080736","Customer#000106382","Customer#000112065","Customer#000112796","Customer#000121024","Customer#000134789","Customer#000135346","Customer#000136940","Customer#000137198","Customer#000137375","Customer#000138209","Customer#000149938"]
-[("AFRICA                   ",["ALGERIA                  ","ETHIOPIA                 ","KENYA                    ","MOROCCO                  ","MOZAMBIQUE               "]),("AMERICA                  ",["ARGENTINA                ","BRAZIL                   ","CANADA                   ","PERU                     ","UNITED STATES            "]),("ASIA                     ",["INDIA                    ","INDONESIA                ","JAPAN                    ","CHINA                    ","VIETNAM                  "]),("EUROPE                   ",["FRANCE                   ","GERMANY                  ","ROMANIA                  ","RUSSIA                   ","UNITED KINGDOM           "]),("MIDDLE EAST              ",["EGYPT                    ","IRAN                     ","IRAQ                     ","JORDAN                   ","SAUDI ARABIA             "])]
-runpg: decimalVal: SqlDouble 48.0
-CallStack (from HasCallStack):
-  error, called at src/Database/DSH/Backend/Sql/Pg.hs:162:51 in dsh-sql-0.3.0.1-16dwQPqpVig1rFKnsSPbCV:Database.DSH.Backend.Sql.Pg
-```
+All tests passing.
