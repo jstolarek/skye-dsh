@@ -14,6 +14,7 @@ executable skye-dsh
   build-depends:       base >=4.9 && <4.10,
                        DSH == 0.13.0.1,
                        dsh-sql == 0.3.0.1,
+                       HDBC,
                        HDBC-odbc
   hs-source-dirs:      src
   default-language:    Haskell2010
