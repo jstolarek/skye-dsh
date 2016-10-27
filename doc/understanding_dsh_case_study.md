@@ -78,3 +78,45 @@ a_based_inQ (view -> (_, _, based_in, _)) = based_in
 a_phoneQ :: Q Agency -> Q Text
 a_phoneQ (view -> (_, _, _, phone)) = phone
 ```
+
+### Table schema
+
+**TODO**: What are `table`, `TableHints`, `Key`, `pure` and `NonEmpty`?
+
+```haskell
+agencies :: Q [Agency]
+agencies = table "agencies"
+                 ( "a_id" :|
+                 [ "a_name"
+                 , "a_based_in"
+                 , "a_phone"
+                 ])
+                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty)
+```
+
+
+Query desugaring
+----------------
+
+**TODO**: How does this exactly desugar?  What is type signature of `tup2`?
+
+```haskell
+-- | Query from Figure 1
+q1 :: Q [(Text, Text)]
+q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
+     | a  <- agencies
+     , et <- externalTours
+     , a_nameQ a  == et_nameQ et
+     , et_typeQ et == "boat"
+     ]
+```
+
+Query compilation to SQL
+------------------------
+
+**TODO:** What is `runQ` and how does `naturalPgCodeGen` work?
+
+```haskell
+execQ :: (QA a, Show a) => BackendConn PgVector -> Q a -> IO ()
+execQ c q = runQ naturalPgCodeGen c q >>= print
+```
