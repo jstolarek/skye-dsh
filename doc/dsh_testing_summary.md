@@ -41,18 +41,46 @@ where `dummy` is an empty database.
   - Moreover, I witnessed these failures:
 
     ```
-    Equality, Boolean Logic and Ordering
-      cond ([[Integer]], [[Integer]]):     FAIL (0.29s)
-        *** Failed! Assertion failed (after 3 tests and 2 shrinks):
-        (False,([],[[]]))
-        Use --quickcheck-replay '2 TFGenR 2D005362D7D7365E3765595553BD4B40291763FCE21FEA8A2AF0DB9B685E79A5 0 14680064 24 0' to reproduce.
-
+    cond ([[Integer]], [[Integer]]):     FAIL (0.61s)
+      *** Failed! Assertion failed (after 6 tests and 4 shrinks):
+      (False,([],[[]]))
+      Use --quickcheck-replay '5 TFGenR 9BAF90A7BFB62B267FC981A3D3AAFA553304737698E4EDC9F1FF0BF70A3B715C 0 132120576 27 0' to reproduce.
+    Numerics
       trig_asin:                           FAIL (0.02s)
-        *** Gave up! Passed only 35 tests.
-      trig_acos:                           FAIL
-        *** Gave up! Passed only 25 tests.
-      exp:                                 FAIL (0.05s)
-        *** Gave up! Passed only 74 tests.
+        *** Gave up! Passed only 33 tests.
+      trig_acos:                           FAIL (0.02s)
+        *** Gave up! Passed only 32 tests.
+      exp:                                 FAIL (0.04s)
+        *** Gave up! Passed only 70 tests.
+    Lists
+      sortWith [(Char,)]:                  FAIL (0.04s)
+        *** Failed! (after 5 tests and 1 shrink):
+        Exception:
+          DSH: Impossible happened at ("src/Database/DSH/Backend/Sql/Pg.hs",150,68)
+          CallStack (from HasCallStack):
+            error, called at src/Database/DSH/Backend/Sql/Pg.hs:150:68 in dsh-sql-0.3.0.1-16dwQPqpVig1rFKnsSPbCV:Database.DSH.Backend.Sql.Pg
+        [('\NUL',0)]
+        Use --quickcheck-replay '4 TFGenR 0BDE0A4DA2BFFEEE57406D11AE71212334343458653052C880D48808544F6AB1 0 69805794224242688 56 0' to reproduce.
+      zip tuple1:                          FAIL
+        Exception: Prelude.chr: bad argument: 3604528
+      zip tuple2:                          FAIL
+        Exception: Prelude.chr: bad argument: 3604528
+    Lifted operations
+      map asin:                            FAIL (0.02s)
+        *** Gave up! Passed only 47 tests.
+      map acos:                            FAIL (0.03s)
+        *** Gave up! Passed only 48 tests.
+      map exp:                             FAIL (0.04s)
+        *** Gave up! Passed only 44 tests.
+    Combinations of operators
+      map elem + sort:                     FAIL (0.04s)
+        *** Failed! Assertion failed (after 2 tests and 4 shrinks):
+        ([],[(0,'a')])
+        Use --quickcheck-replay '1 TFGenR C5D04289EF2A44EDA211FA97DA60B5A12650CF5FEC1B1E785D2DAF9C29B50A23 0 13510798882111488 54 0' to reproduce.
+      filter elem + sort:                  FAIL (0.39s)
+        *** Failed! Assertion failed (after 11 tests and 7 shrinks):
+        ([-6,-2],[(-6,'a'),(-2,'A')])
+        Use --quickcheck-replay '10 TFGenR C5D04289EF2A44EDA211FA97DA60B5A12650CF5FEC1B1E785D2DAF9C29B50A23 0 18437736874454810624 64 0' to reproduce.
     ```
 
     Exact number of failing tests differs between runs, but these failures seem
@@ -60,11 +88,6 @@ where `dummy` is an empty database.
 
   - `deep`, `cartprod_deep` and `cartprod_deep_nested` tests take several
     minutes to finish
-
-  - `partitionEithers` (`Either` test group) suffers from a memory leak.  I
-    killed the process after using 14GB of RAM.
-
-  - no tests beyond `partitionEithers` were run
 
 
 TestTPCH
