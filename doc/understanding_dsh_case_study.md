@@ -197,10 +197,13 @@ mandatory to define what kind of data is actualy stored in a table.
 Case study
 ----------
 
-All the TH code below was obtained by building the project using `cabal build
---ghc-options=-ddump-splices` and cleaning up the results slightly.
+Below is a simple case study of a an example query from "Language-integrated
+Provenance" paper.  All the TH code below was obtained by building the project
+using `cabal build --ghc-options=-ddump-splices` and cleaning up the results
+slightly.
 
-### Data types and derived definitions
+
+### Table row representation and derived definitions
 
 To represent a single table row one needs to define a record type which
 structure corresponds to table schema:
@@ -221,6 +224,7 @@ generateTableSelectors ''Agency
 `Text` is a data type from `Data.Text`, that is re-exported by `Database.DSH`.
 `deriveDSH`, `deriveTA` and `generateTableSelectors` are defined in
 `Database.DSH.Frontend.TH`.
+
 
 #### deriveDSH ''Agency
 
@@ -333,6 +337,7 @@ q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
      , et_typeQ et == "boat"
      ]
 ```
+
 
 Query compilation to SQL
 ------------------------
