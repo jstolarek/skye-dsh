@@ -216,7 +216,7 @@ other functions defined in `Database.DSH.Frontend.Externals` module.  That
 module also redefines many functions from standard Prelude to work on DSH
 expressions wrapped in `Q`.  For example:
 
-```
+```haskell
 return :: (QA a) => Q a -> Q [a]
 return = singleton
 
@@ -293,7 +293,7 @@ translateApp ConcatMap (Tuple2E (LamE lam) xs) = do
     (boundVar, bodyExp) <- lamBody lam
     bodyExp'            <- translate bodyExp
     return $ CP.concat $ CP.singleGenComp bodyExp' boundVar xs'
-translate    Minimum   args = CP.minimum <$> translate args
+translateApp Minimum   args = CP.minimum <$> translate args
 ```
 
 where `minimum` is defined as:
