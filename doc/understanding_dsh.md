@@ -296,14 +296,25 @@ translateApp ConcatMap (Tuple2E (LamE lam) xs) = do
 translateApp Minimum   args = CP.minimum <$> translate args
 ```
 
-where `minimum` is defined as:
+where `concat`, `minimum` and `singleGenComp` is defined as:
 
 ```haskell
+concat :: Expr -> Expr
+concat e = let t = typeOf e
+           in if listDepth t P.> 1
+              then AppE1 (unliftType t) Concat e
+              else tyErr "concat"
+
 minimum :: Expr -> Expr
 minimum e = let (ListT t) = typeOf e
             in if isNum t
                then AppE1 t (Agg Minimum) e
                else tyErr "minimum"
+
+singleGenComp :: Expr -> LIdent -> Expr -> Expr
+singleGenComp bodyExp v gen =
+    let bodyTy = typeOf bodyExp
+    in Comp (ListT bodyTy) bodyExp (S $ BindQ v gen)
 ```
 
 Note that `minimum` inserts explicit aggregation operator and also propagates
