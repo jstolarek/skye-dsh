@@ -18,13 +18,37 @@ data Agency = Agency
     } deriving (Show)
 ```
 
+The purpose of `Prov` would be to simply detect its presence during TH
+transformations and generate extra provenance information for a field which type
+is `Prov sth`.  Note that TH can't tell whether `Prov` is a type family, type
+constructor or type synonym - it only sees a type application.
+
 It is not yet clear to me what `Prov` should be.  One idea is to have it as an
 identity type family defined for base types only (those types that allow
-provenance tracking).  The purpose of `Prov` type family would be to simply
-detect its presence during TH transformations and generate extra provenance
-information for a field which type is `Prov sth`.  (Note that TH can't tell
-whether `Prov` is a type family, type constructor or type synonym - it only sees
-a type application.) A rough idea is:
+provenance tracking):
+
+```haskell
+type family Prop a where
+     Prop Text    = Text
+     Prop Integer = Integer
+     Prop Bool    = Bool
+```
+
+Another approach would be to define `Prov` as a type synonym:
+
+```haskell
+type Prov a = (a, String, String, Integer)
+```
+
+This avoids the problem of making a logical connection between provenance
+information and the data that it refers to (see discussion of `QA` instances
+below).  This would definitely require a slightly different treatment of view
+patterns and field accessors generated with them.  Also, making class instances
+of a type synonym will require an extra language extension.
+
+Perhaps using data families is also an option here?
+
+Assuming the type family approach a rough idea is:
 
   - in the `QA` instance generate extra tuple fields in `Rep` instance.
     Hopefully extra tuple field like `Rep Provenance` will be permitted.  So in
@@ -75,9 +99,16 @@ a type application.) A rough idea is:
     where `prov a_name` would return `["a_name", "a_name_prov_table",
     "a_name_prov_column", "a_name_prov_row"]`.
 
+    **NOTE:** The above might be wrong.  The table is flat, but internal
+      representation of provenance will most likely be nested.  This would
+      probably required explicit treatment and conversion inside DSH.  Perhaps
+      it would be possible to extend `TableHints` to contain extra information
+      necessary to do this?
+
 That more or less covers the treatment of provenance on the surface.  I do not
 yet have any idea how to handle provenance under the hood, especially the fact
 that it must be tracked implicitly.
+
 
 Some open questions and loose thoughts
 --------------------------------------
@@ -126,6 +157,7 @@ Some open questions and loose thoughts
     checking and inference algorithm.  Needless to say, this will be far from
     trivial.
 
+
 Some notes from "Language-integrated Provenance in Links" paper
 ---------------------------------------------------------------
 
@@ -142,7 +174,9 @@ Four requirements for a type system that tracks provenance:
     I think this will be prevented by the surface encoding.  There will only be
     a view that allows to extract provenance from internal representation.  This
     should allow to write queries that inspect provenance - cf. example in the
-    paper in Figure 2, where comment provenance is queried.
+    paper in Figure 2, where comment provenance is queried.  Another thing to do
+    is to ensure encapsulation of provenance abstractions.  This should be
+    easily done using Haskell modules.
 
   - **"changes to data would invalidate where-provenance"**
 
