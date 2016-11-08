@@ -138,11 +138,18 @@ representation type must be reifiable.
 class TA a where
 ```
 
-Unknown purpose.  This class is empty.  `Database.DSH.Frontend.Externals`
-defines instances of `TA` for `()`, `Bool`, `Char`, `Integer`, `Double`, `Text`,
-`Decimal`, `Scientific` and `Day`.  Instances of `BasicType` exist for same
-types.  `TA` constraint exists mostly on various comparison and ordering
-functions, but these also have `Eq` and `Ord` constraints as well.
+This class represents elements that can be represented in a flat relational
+table row.  There are `TA` instances for `()`, `Bool`, `Char`, `Integer`,
+`Double`, `Text`, `Decimal`, `Scientific`, `Day`, and tuples (generated with TH)
+in `Database.DSH.Frontend.Externals`, but there is no instance for lists.  `TA`
+constraint is crucially used on the signature of `table`:
+
+```haskell
+table :: (QA a, TA a) => String -> [...] -> Q [a]
+```
+
+**TODO:** explore whether types that contain nested tuples can be made into
+  instances of `TA`.
 
 
 #### Q newtype
@@ -408,8 +415,6 @@ AppE    :: Fun a b -> Exp a -> Exp b
 ```haskell
 instance TA Agency
 ```
-
-I don't know what is the purpose of this instance.
 
 
 #### generateTableSelectors ''Agency
