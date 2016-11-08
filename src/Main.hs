@@ -29,6 +29,9 @@ main = do
             c <- getConn dsn
             let dshConn = pgConn c
             execQ dshConn q1
+            execQ dshConn q1'
+            execQ dshConn q1''
+            execQ dshConn q2
             disconnect c
         _     ->
             error "Pass ODBC connection name as a single argument"
