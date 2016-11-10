@@ -304,7 +304,7 @@ of corresponding row.  This is rather simple.  I think the biggest difficulty
 here is assigning id number based on database row.  However, in this system
 provenance data is managed explicitly.  For example:
 
-```
+```links
 var q1''' = query {
   for (a <-- agencies)
     for (e <-- externalTours)
@@ -317,7 +317,7 @@ var q1''' = query {
 Here provenance is managed explicitly.  I was thinking that provenance should be
 handled implicitly:
 
-```
+```links
 var q1''' = query {
   for (a <-- agencies)
     for (e <-- externalTours)
@@ -329,6 +329,3 @@ var q1''' = query {
 Here, since `phone` field is annotated with provenance information, provenance
 would be implicitly assigned to `phone` field in the result.  Of course if we
 wanted to inspect provenance then we would still have to extract it explicitly.
-
-
-### Section 3.1 - Where-provenance

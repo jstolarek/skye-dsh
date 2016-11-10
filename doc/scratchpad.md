@@ -30,3 +30,17 @@ Regarding Q22 in test-tpch taking too long to run:
 > 5. SL.Lang (Segment Language): Algebraic language, basically implements
 > Blelloch's segment vector model. Translated into relational algebra and
 > then to SQL in dsh-sql.
+
+
+TODO
+----
+
+  * Figure out how function application works in DSH.  Can I use lambdas?  If I
+    call my own functions what constructs can they contain?  What happens if
+    they call functions unsupported by DSH?
+
+  * It seems that `QA` and `TA` classes overlap.  If I create a record type that
+    stores a nested tuple, can I store it in a database?
+
+  * Figure out how to use PostgreSQL OID fields to assign initial
+    where-provenance row id

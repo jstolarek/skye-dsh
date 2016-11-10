@@ -30,10 +30,10 @@ with their types, e.g:
 
 ```haskell
 data Fun a b where
-    Not              :: Fun Bool Bool
-    Concat           :: Fun [[a]] [a]
-    Null             :: Fun [a] Bool
-    TupElem          :: TupElem a b -> Fun a b
+    Not     :: Fun Bool Bool
+    Concat  :: Fun [[a]] [a]
+    Null    :: Fun [a] Bool
+    TupElem :: TupElem a b -> Fun a b
 ```
 
 
@@ -80,11 +80,11 @@ There's also `Type` GADT that represents types of expressions encoded with
 
 ```haskell
 data Type a where
-    UnitT       :: Type ()
-    BoolT       :: Type Bool
+    UnitT  :: Type ()
+    BoolT  :: Type Bool
 --  (...)
-    ArrowT      :: (Reify a,Reify b)  => Type a -> Type b -> Type (a -> b)
-    TupleT      :: TupleType a -> Type a
+    ArrowT :: (Reify a,Reify b)  => Type a -> Type b -> Type (a -> b)
+    TupleT :: TupleType a -> Type a
 ```
 
 `TupleType` is analogous to `TupleConst`, except that constructors store `Type`
@@ -478,3 +478,18 @@ Query compilation to SQL
 execQ :: (QA a, Show a) => BackendConn PgVector -> Q a -> IO ()
 execQ c q = runQ naturalPgCodeGen c q >>= print
 ```
+
+
+Generated query
+---------------
+
+For the above example generated SQL query is:
+
+```SQL
+SELECT a0.a_id AS o1, a1.et_id AS o2, a1.et_name AS i1, a0.a_phone AS i2
+FROM agencies AS a0, externaltours AS a1
+WHERE (a0.a_name = a1.et_name) AND (a1.et_type = 'boat')
+ORDER BY o1 ASC, o2 ASC
+```
+
+`ORDER BY` is how DSH maintains list semantics.
