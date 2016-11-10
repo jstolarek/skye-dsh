@@ -44,3 +44,13 @@ TODO
 
   * Figure out how to use PostgreSQL OID fields to assign initial
     where-provenance row id
+
+  * Have a function to discard provenance information:
+
+    ```haskell
+    unprov :: WhereProv a -> a
+    unprov (a, _) = a
+    ```
+
+  * provenance should index rows by their keys, not by integers.  But how do I
+    encode that?  Existentials?  Type classes?
