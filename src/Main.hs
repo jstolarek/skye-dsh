@@ -12,6 +12,7 @@ import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
 import           Queries.PPDP2016Tours
+import qualified Queries.PPDP2016ToursProv as Prov
 
 getConn :: String -> IO Connection
 getConn dsn = connectODBC (printf "DSN=%s" dsn)

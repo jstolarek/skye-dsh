@@ -2,13 +2,14 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RebindableSyntax    #-}
 
--- | This module implements example queries on tour agencies database from the
--- "Language-integrated Provenance" paper by Stefan Fehrenbach and James Cheney.
-module Queries.PPDP2016Tours where
+-- | This module implements example queries with where-provenance tracking on
+-- tour agencies database from the "Language-integrated Provenance" paper by
+-- Stefan Fehrenbach and James Cheney.
+module Queries.PPDP2016ToursProv where
 
 import           Database.DSH
 
-import           Schema.PPDP2016Tours
+import           Schema.PPDP2016ToursProv
 
 -- | Query from Figure 1
 q1 :: Q [(Text, Text)]

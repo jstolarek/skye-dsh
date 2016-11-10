@@ -31,10 +31,10 @@ identity type family defined for base types only (those types that allow
 provenance tracking):
 
 ```haskell
-type family Prop a where
-     Prop Text    = Text
-     Prop Integer = Integer
-     Prop Bool    = Bool
+type family Prov a where
+     Prov Text    = Text
+     Prov Integer = Integer
+     Prov Bool    = Bool
 ```
 
 Another approach would be to define `Prov` as a type synonym:
@@ -57,10 +57,10 @@ Perhaps using data families is also an option here?
   `Maybe`, e.g.:
 
 ```haskell
-type family Prop a where
-     Prop Text    = ( Text   , Maybe Provenance )
-     Prop Integer = ( Integer, Maybe Provenance )
-     Prop Bool    = ( Bool   , Maybe Provenance )
+type family Prov a where
+     Prov Text    = ( Text   , Maybe Provenance )
+     Prov Integer = ( Integer, Maybe Provenance )
+     Prov Bool    = ( Bool   , Maybe Provenance )
 ```
 
 **Note:** no matter what representation I pick I should make it abstract to
