@@ -54,3 +54,5 @@ TODO
 
   * provenance should index rows by their keys, not by integers.  But how do I
     encode that?  Existentials?  Type classes?
+
+  * in which situations do we insert `Nothing` as where-provenance?

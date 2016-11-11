@@ -215,6 +215,38 @@ arguments.  In other words, type siganture or table declarations *seems*
 mandatory to define what kind of data is actualy stored in a table.
 
 
+### Compilation pipeline
+
+At a high level pipeline looks like this:
+
+```haskell
+execQ :: (QA a, Show a) => BackendConn PgVector -> Q a -> IO ()
+execQ c q = runQ naturalPgCodeGen c q >>= print
+
+runQ :: forall a b v. (VectorLang v, BackendVector b, QA a)
+     => BackendCodeGen v b
+     -> BackendConn b
+     -> Q a
+     -> IO a
+runQ codeGen conn (Q q) = do
+    let ty = reify (undefined :: Rep a)
+    let comprehensions = toComprehensions q
+    let vectorPlan = compileOptQ optBU comprehensions
+    let backendCode = codeGen vectorPlan
+    frExp <$> execQueryBundle conn backendCode ty
+
+compileOptQ :: VectorLang v => CLOptimizer -> CL.Expr -> QueryPlan v DVec
+compileOptQ clOpt = compileQ clOpt >>> optimizeVectorPlan
+
+compileQ :: VectorLang v => CLOptimizer -> CL.Expr -> QueryPlan v DVec
+compileQ clOpt = (fst . clOpt) >>>
+                 desugarComprehensions  >>>
+                 optimizeNKL            >>>
+                 flatTransform          >>>
+                 vectorize
+```
+
+
 ### Query desugaring
 
 GHC desugars a comprehension into calls to `>>=` and `return`.  DSH uses
@@ -468,17 +500,53 @@ q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
      ]
 ```
 
+I believe that the most important bit required to implement where-provenance is
+understanding how `a <- agencies` is executed.  Why?  Because this is the bit
+that extracts data from the database table and we want that extracted data to
+contain provenance information, although the information itself is not present
+in the database.  Let's trace how desugaring and compilation happens for this
+expression:
+
+```haskell
+-- original form
+a <- agencies
+body
+
+-- desugaring of do-notation
+agencies >>= (\a -> body)
+
+-- DSH frontend desugaring
+concatMap (\a -> body) agencies
+
+-- call to concatMap produces
+Q (AppE ConctaMap (pairE (LamE (toLam (\a -> body))) agencies))
+-- where
+agencies = (TableE (TableDB "agencies" col_names hints))
+pairE a b = TupleConstE (Tuple2E a b)
+toLam :: (QA a,QA b) => (Q a -> Q b) -> Exp (Rep a) -> Exp (Rep b)
+toLam f = unQ . f . Q
+```
+
 
 Query compilation to SQL
 ------------------------
 
-**TODO:** What is `runQ` and how does `naturalPgCodeGen` work?
+`toComprehensions` is called to translate from frontend language to CL language.
+Continuing the previous example:
 
 ```haskell
-execQ :: (QA a, Show a) => BackendConn PgVector -> Q a -> IO ()
-execQ c q = runQ naturalPgCodeGen c q >>= print
+-- application AppE is translated by translateApp to:
+AppE1 _ Concat (Comp (ListT ..) body
+                     (S $ BindQ a (Table (TupleT [...]) "agencies" schema)))
+-- where
+S - singleton list constructor
+BindQ - stores a String (`a`) and a table expression
 ```
 
+`SegmentAlgebra` type class also looks interesting -- resume investigation from
+here.  It looks like the right place to inject provenance will be in the
+instance of that type class inside `dsh-sql` submodule,
+`Database.DSH.Backend.Sql.Relational.Natural` module
 
 Generated query
 ---------------
