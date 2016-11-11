@@ -38,7 +38,7 @@ agencies = table "agencies"
                  , "a_based_in"
                  , "a_phone"
                  ])
-                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty)
+                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty NoProvenance)
 
 externalTours :: Q [ExternalTour]
 externalTours = table "externaltours"
@@ -48,4 +48,4 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
-                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty)
+                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty NoProvenance)
