@@ -33,6 +33,9 @@ main = do
             execQ dshConn q1'
             execQ dshConn q1''
             execQ dshConn q2
+
+            -- queries with provenance tracking
+            execQ dshConn Prov.q1
             disconnect c
         _     ->
             error "Pass ODBC connection name as a single argument"
