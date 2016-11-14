@@ -14,25 +14,32 @@ data WhereProvData = WhereProvData
     } deriving ( Show )
 ```
 
-Open questions:
+**Open question:** `where_prov_key` is currently encoded as `Integer` but it
+would be nice if this field was polymorphic and admitted any key that allows to
+identify a row.  I also wonder how the choice of int interacts with the backend
+that seems to arbitrarily pick the key (see definition of `vecTableRef` in
+`dsh-sql` and later dsicussion in this document).
 
-  - `where_prov_key` is currently encoded as `Integer` but it would be nice if
-    this field was polymorphioc and admitted any other key that allows to
-    identify a row.
+Important requirements for where-provenance are:
 
-Two important requirements for where-provenance are:
-
+  - where-provenance representation should be made abstract to prevent
+    programmer from creating values of that type (cf. "Language-integrated
+    provenance", Section 3.1).
   - it must be attached to a particular record field
+  - it can only be tracked for basic types
   - it may be absent, ie. the value was not copied but created by the query
 
-THe above requirements can be achieved using a closed type family defined for
-basic data types for which we track provenance:
+First requirement can be achieved by not exporting constructors.  Remaining
+three requirements can be achieved using a closed type family defined for basic
+data types for which we track provenance:
 
 ```haskell
+type WhereProvInfo = Maybe WhereProvData
+
 type family WhereProv a where
-     WhereProv Text    = ( Text   , Maybe WhereProvData )
-     WhereProv Integer = ( Integer, Maybe WhereProvData )
-     WhereProv Bool    = ( Bool   , Maybe WhereProvData )
+     WhereProv Text    = ( Text   , WhereProvInfo )
+     WhereProv Integer = ( Integer, WhereProvInfo )
+     WhereProv Bool    = ( Bool   , WhereProvInfo )
 ```
 
 Now we can mark provenance tracking by using `WhereProv` like this:
@@ -40,174 +47,171 @@ Now we can mark provenance tracking by using `WhereProv` like this:
 ```haskell
 data Agency = Agency
     { a_id       :: Integer
-    , a_name     :: WhereProv Text
+    , a_name     :: Text
     , a_based_in :: Text
-    , a_phone    :: Text
+    , a_phone    :: WhereProv Text
     } deriving (Show)
 ```
 
-The extra purpose of `WhereProv` is to be detected during TH transformations.
-This will allow to generate different view patterns that will allow to access
-provenance components.  Note that TH can't tell whether `Prov` is a type family,
-type constructor or type synonym - it only sees a type application.
+This attaches provenance information to `a_name` field.  The extra purpose of
+`WhereProv` is to be detected during TH transformations.  This will allow to
+generate different view patterns that will allow to access provenance
+components.  Note that TH can't tell whether `Prov` is a type family, type
+constructor or type synonym - it only sees a type application.
 
-Where-provenance representation should be made abstract to prevent programmer
-rom creating values of that type (cf. "Language-integrated provenance", Section
-3.1).
+There will also be some helper functions to drop/extract provenance information:
+
+```haskell
+provQ   :: (QA a) => Q (a, WhereProvInfo) -> Q WhereProvInfo
+unprovQ :: (QA a) => Q (a, WhereProvInfo) -> Q a
+```
+
+Note that because of defining `WhereProv` as a type family it is impossible to
+write the type signatures of the above functions as:
+
+```haskell
+provQ   :: (QA a) => Q (WhereProv a) -> Q WhereProvInfo
+unprovQ :: (QA a) => Q (WhereProv a) -> Q a
+```
+
+The reason is that the type checker does not know that `WhereProv a` will always
+be a tuple.  The alternatives could be to turn `WhereProv` into a type synonym.
+However, it would allow to declare where-provenance tracking for any data type.
+I don't think this error would be easy to catch.  Note also that the proposed
+type signature of `prov` would require to declare `WhereProv` as injective.
 
 
-Where-provenance encoding
--------------------------
+Where-provenance implementation - technical details
+---------------------------------------------------
 
-**NOTE** This section is slightly outdated with respect to what was outlined
-  above.  I will update it as soon as I figure out implementation details.
+A rough idea to implementing where-provenance is outlined below, based on the
+example of tracking where-provenance of `a_phone` field in the `Agency` data
+type given above.
 
-Assuming the type family approach a rough idea is:
 
-  - in the `QA` instance generate extra tuple fields in `Rep` instance.
-    Hopefully extra tuple field like `Rep Provenance` will be permitted.  So in
-    the above example I would get:
+### `QA` instances
 
-    ```haskell
-    instance QA Agency where
-      type Rep Agency = ( Rep Integer, Rep Text, Rep (Maybe Provenance)
-                        , Rep Text   , Rep Text
-                        )
-    ```
+The idea here is to do nothing special and generate `QA`
+instances without any modifications.  This will result in:
 
-    It is not clear to me how to connect provenance to a particular field.
-    (Quote from paper, sec. 3.1: _"Provenance information has meaning only in
-    the context of data it belongs to."_) In the example above I placed the
-    provenance info right after a field it is assigned to but that seems very
-    fragile, more of a hack than a proper solution.  More on this later.
+```haskell
+instance QA Agency where
+  type Rep Agency = (Rep Integer, Rep Text, Rep Text, Rep (WhereProv Text))
+```
 
-    Generating appropriate definitions of `toExp`/`fromExp` should be
-    straightforward.
+and straightforward definitions of `toExp`/`frExp`.  The major advantage of
+this approach is that provenance information is directly attached to the
+data value it belongs to.  (Quote from paper, sec. 3.1: _"Provenance
+information has meaning only in the context of data it belongs to."_) The
+downside is that with the current implementation of DSH nested tuples are
+not permitted, so this will result in a compilation error when translating
+from frontend language to CL language.  This is discussed later.
 
-  - I think `View` instance should take provenance into account.  This will
-    later be used by `generateTableSelectors` to generate selectors that allow
-    to read provenance.  So in the example above we would have:
 
-    ```haskell
-    a_nameQ :: Q Agency -> Q Text
-    a_nameQ (view -> (_, name, _, _, _)) = name
+### `View` instance
 
-    prov_a_nameQ :: Q Agency -> Q Provenance
-    prov_a_nameQ (view -> (_, _, prov, _)) = prov
-    ```
+Remains unchanged, but selectors generated with `generateTableSelectors` now
+have to take provenance into account. In the example above we have:
 
-  - It is not yet clear to me how adding provenance would affect the table
-    schema.  I believe this is the dilemma of having eager vs. lazy provenance.
-    In the eager case the table schema would have to contain information about
-    provenance columns.  One solution would be to do this completely explicitly,
-    ie. require programmer to list and name provenance columns.  Another
-    approach would be to create a simple function to automatically generate
-    provenance columns.  So for example:
+```haskell
+a_phoneQ :: Q Agency -> Q Text
+a_phoneQ (view -> (_, _, _, name)) = unprovQ name
 
-    ```haskell
-    agencies :: Q [Agency]
-    agencies = table "agencies"
-                   ( "a_id" :|
-                     prov "a_name" ++
-                   [ "a_based_in"
-                   , "a_phone"
-                   ])
-                   (TableHints (pure $ Key (pure "a_id") ) NonEmpty)
-    ```
+a_phone_provQ :: Q Agency -> Q (WhereProvInfo)
+a_phone_provQ (view -> (_, _, _, name)) = provQ name
+```
 
-    where `prov a_name` would return `["a_name", "a_name_prov_table",
-    "a_name_prov_column", "a_name_prov_row"]`.  However, such encoding does not
-    seem to allow provenance to be bottom.  I suppose it is technically possible
-    to insert `null` into provenance columns if provenance is missing and have
-    that converted into `Nothing`, but that seems like a lot of hassle.
 
-    **NOTE:** The above might be wrong.  The table is flat, but internal
-      representation of provenance will most likely be nested.  This would
-      probably required explicit treatment and conversion inside DSH.  Perhaps
-      it would be possible to extend `TableHints` to contain extra information
-      necessary to do this?
+### Smart constructor
 
-    Perhaps a proper approach would be to have a separate table for provenance
-    and have connections between tables?
+Smart constructor now needs to insert empty provenance information, ie. a
+`Nothing`.  Internally `Nothing` is represented as an empty list, so we have:
 
-    Reading the papers on provenance in Links makes me believe that in the
-    simplest setting provenance might not have to be stored in a database, so
-    modification of table schema will not be necessary.  Section 3.1 of
-    "Language-integrated provenance" gives details of the provenance encoding in
-    Links and describes how a provenance-extended table is created on the fly.
+```haskell
+agency :: Q Integer -> Q Text -> Q Text -> Q Text -> Q Agency
+agency (Q a_id) (Q a_name) (Q a_based_in) (Q a_phone)
+  = Q (TupleConstE (Tuple4E a_id a_name a_based_in
+                   (TupleConstE (Tuple2E a_phone (ListE $ S.empty)))))
+```
 
-That more or less covers the treatment of provenance on the surface.  I do not
-yet have any idea how to handle provenance under the hood, especially the fact
-that it must be tracked implicitly.
+The consequence of proposed representation is that provenance can only be
+inspected (via generated table selectors) but not modified or forged in any way.
+
+
+### Table declaration
+
+This seems to be the crucial bit.  Table declaration, when evaluated, yields
+data extracted from a database.  Recall that `table` declaration: a) provides a
+list of columns of a database table; and b) has type `Q [Agency]`.  However,
+with where-provenance added we're in a situation where the Haskell data type
+structure does not match structure of a data base.  So what we need to do is
+modify the representation of data returned by evaluating table declaration
+expression.  In other words, we want to attach where-provenance on the fly,
+after the data is pulled out of the data base.  To do this we need to know which
+fields need to have where-provenance information.  I propose:
+
+```haskell
+agencies :: Q [Agency]
+agencies = table "agencies" ( "a_id" :| [ "a_name", "a_based_in", "a_phone" ])
+                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty
+                             (WhereProvenance $ pure "a_phone"))
+```
+
+Note the last line that contains extra hint about which fields need extra
+where-provenance information.  At this point it is not yet clear to my how
+exactly this information will be used under the hood.  Nevertheless, this
+information should suffice.
+
+
+### [WIP] Passing table with provenance annotations down the compilation pipeline
+
+Table expression generated with `table` function is translated into
+`BaseTableSchema` - see ["Translation of table declarations into
+CL"](https://github.com/jstolarek/skye-dsh/blob/master/doc/understanding_dsh.md#translation-of-table-declarations-into-cl).
+Here we encountr first bump: it is not permitted to have tuples as fields in a
+data type.  Unfortunatelly, field annotated with where-provenance is a tuple.
+And so attempting to run a query with provenance information results in error
+`skye-dsh: Non-scalar types in table agencies`.  A possible solution might be to
+use provenance hint in table declaration to modify the type of field on the fly
+and thus pass the check.  It is also crucial to include where-provenance
+information in `BaseTableSchema`.  `BaseTableSchema` is passed unchanged all the
+way to the SQL backend in `dsh-sql` library.
+
+This is as far as my knowledge goes at the moment.  Conceptually, we need to
+attach provenance information to the data once it is pulled out of the data
+base.  Below is a rough list of open questions:
+
+  * it seems that `BaseTableSchema` is passed all the way down to `dsh-sql` and
+    used in `Database.DSH.Backend.Sql.Relational.Natural` module in the function
+    `vecTableRef` (in the `instance SegmentAlgebra TableAlgebre` declaration).
+    What this function seems to be doing is to construct some abstract
+    representation of table with information about columns, their required
+    projections and sorting order.  This is not where the provenance information
+    should go - the query needs to be executed without any modifications.
+    However, the bad news is that the database schema seems to be discarded at
+    this point.  If this is indeed the case then things get complicated.
+
+  * DSH seems to compile a query down to some sort of abstract algebra.  DAG in
+    the name of the library suggests directed acyclic graphs - see also
+    `AlgebraDag` data type in `Database.Algebra.Dag` module, `algebra-dag`
+    library.  I have absolutely no idea how this representation works
+
+  * I have not yet located place in the code where the data pulled from the data
+    based is actually assembled into a result.  I believe this is where the
+    provenance information should be added.
+
+  * DSH adds implicit ordering information to maintain list semantics.  Figuring
+    out how this is done could be helpful.  Adding where-provenance might turn
+    out to be similar.
 
 
 Some open questions and loose thoughts
 --------------------------------------
 
-  * Should I add provenance to internal type language?  My guess is this would
-    simplify (or perhaps even enable?) handling of provenance under the hood.
-    Still it is not clear to me how to make a connection between provenance
-    information and the field it is supposed to be assigned to.  (Quote from
+  * Should I somehow add provenance to internal type language?  (Quote from
     paper: _"The type system should capture the special nature of provenance
-    meta-data."_)
-
-    BTW. Does the DSH's internal type system have any typing rules written down
-    somewhere?  I should probably ask Alex.
-
-  * Directly connected to the previous question is the problem of propagating
-    provenance implicitly under the hood.  Two things how to do this come to my
-    mind:
-
-      - Handle provenance tracking during comprehension desugaring.  I'm not
-        sure if this would be a good idea.  I think that desugaring should only
-        insert information that provenance is supposed to be tracked but without
-        assigning any semantic meaning.  In other words desugaring should only
-        do desugaring.
-
-      - Handle provenance during translation to CL.  `translate` function would
-        convert provenance annotations into concrete query constructs.  This
-        means that `CL` and any subsequent internal representation (NKL, FKL,
-        SL) would not have to be modified.
-
-    **Note:** _this paragraph is here for historical reasons.  I got confused a
-    bit and want to record this confusion for now, hopefully to avoid it in the
-    future_.  Note that the ideas above seem to be slightly different than in
-    "Language-integrated provenance in Links" paper.  In the paper user is
-    allowed to define a function that says how to compute provenance.  Above I
-    assumed that the system will internally track provenance.  For example, if
-    data is copied into a record field (database cell) the system will fill in
-    the required provenance information.  However, this might be hard to
-    achieve.  Most importantly, how will the system know where does data
-    originate from?  While this seems easy to track when copying data directly
-    from a database table, it seems a lot harder when data is produced by some
-    intermediate query.  To handle such a situation we would need to thread
-    provenance through all the intermediate queries.  Moreover, we will either
-    have to figure out how to determine which components of the intermediate
-    query need to have provenance attached, or eagerly attach provenance to
-    every component of intermediate query just in case this information is
-    needed at the end.  The second alternative might be to costly in terms of
-    overhead.
-
-    "Language-integrated query" paper, section 3.1 clarifies how
-    where-provenance is propagated.  The idea is that by default provenance
-    information is attached to a particular field and propagated together with
-    value of that field.  However, users are allowed to define their own
-    functions that compute provenance.  The intended use case is to fetch
-    provenance metadata stored separately from the actual data.  This is
-    probably something worth having in the final system, but at the moment I
-    don't have a good idea how to incorporate this into my encoding.
-
-  * The consequence of proposed representation is that provenance could only be
-    inspected (via generated table selectors) but not modified in any way.
-    Also, perhaps it would make sense to generate a separate type class for
-    viewing provenance?  I'm not sure if this has any merit but the thought
-    crossed my mind at one point so I'm noting it down.
-
-  * One thing to keep in mind is that DSH assumes maximum tuple width to be 16.
-    So it would be possible to attach provenance to at most 8 fields.  That's
-    not a theoretical problem but could potentially limit practical
-    applications.  Of course it is trivially simple to modify DSH to allow wider
-    tuples but, as usual with TH, performance might drop.
+    meta-data."_) Does the DSH's internal type system have any typing rules
+    written down somewhere?  I should probably ask Alex.
 
   * It should be possible to use DSH's internal type information to guide basic
     provenance transformations.  However, I doubt this approach will work for
@@ -220,6 +224,17 @@ Some open questions and loose thoughts
     forms of provenance?  Can they be expressed using this approach?  It would
     be nice to come up with something that allows extension to other forms of
     provenance and a uniform treatment of all of them.
+
+  * I assumed that each row can be identified with an `Integer`.  Ideally, we'd
+    like this to be polymorphic, ie. we want to by able to identify a row by a
+    key value.  There are several problems here though.  One problem is how to
+    expose this information to a library user?  Do we want this polymorphism to
+    be exposed in type or do we want to hide it as an existential?  I'm also not
+    sure how to treat this under the hood.  Most importantly, if a table has
+    several keys will it be possible to use any of them for provenance tracking?
+    There is code that hints that might not be the case - see module
+    `Database.DSH.Backend.Sql.Relational.Natural`, the call to `chooseBaseKey`
+    inside `vecTableRef`.
 
 
 Some notes on "Language-integrated Provenance in Links" paper
@@ -263,8 +278,8 @@ Four requirements for a type system that tracks provenance:
     literally anything with it.
 
 In the paper provenance can only be attached to base types.  In my proposal this
-would be achieved by defining `Prov` as a closed type family with instances only
-for those types for which we can track provenance.
+would be achieved by defining `WhereProv` as a closed type family with instances
+only for those types for which we can track provenance.
 
 
 ### Section 3.2 - Translation
@@ -320,3 +335,14 @@ var q1''' = query {
 Here, since `phone` field is annotated with provenance information, provenance
 would be implicitly assigned to `phone` field in the result.  Of course if we
 wanted to inspect provenance then we would still have to extract it explicitly.
+
+
+### Section 3.1
+
+This section clarifies how where-provenance is propagated.  The idea is that by
+default provenance information is attached to a particular field and propagated
+together with value of that field.  However, users are allowed to define their
+own functions that compute provenance.  The intended use case is to fetch
+provenance metadata stored separately from the actual data.  This is probably
+something worth having in the final system, but at the moment I don't have a
+good idea how to incorporate this into my encoding.

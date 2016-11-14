@@ -17,6 +17,8 @@ data Agency = Agency
     , a_phone    :: WhereProv Text
     } deriving (Show)
 
+deriveTA ''Agency
+
 data ExternalTour = ExternalTour
     { et_id          :: Integer
     , et_name        :: Text
@@ -24,6 +26,10 @@ data ExternalTour = ExternalTour
     , et_type        :: Text
     , et_price       :: Integer
     } deriving (Show)
+
+deriveDSH              ''ExternalTour
+deriveTA               ''ExternalTour
+generateTableSelectors ''ExternalTour
 
 agencies :: Q [Agency]
 agencies = table "agencies"
@@ -46,14 +52,8 @@ externalTours = table "externaltours"
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty
                                   NoProvenance)
 
-deriveDSH              ''ExternalTour
-deriveTA               ''ExternalTour
-generateTableSelectors ''ExternalTour
-
 -- JSTOLAREK: prototype code below.  In the final version of library all these
 -- code needs to be generated with TH
-
-deriveTA ''Agency
 
 instance QA Agency where
   type Rep Agency = (Rep Integer, Rep Text, Rep Text, Rep (WhereProv Text))
@@ -89,5 +89,5 @@ a_based_inQ (view -> (_, _, x_aap4, _)) = x_aap4
 -- JSTOLAREK: these two have extra calls to provQ/unprovQ
 a_phoneQ :: Q Agency -> Q Text
 a_phoneQ (view -> (_, _, _, x_aap5)) = unprovQ x_aap5
-a_phone_provQ :: Q Agency -> Q (WhereProvInfo)
+a_phone_provQ :: Q Agency -> Q WhereProvInfo
 a_phone_provQ (view -> (_, _, _, x_aap5)) = provQ x_aap5

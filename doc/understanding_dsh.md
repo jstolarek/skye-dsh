@@ -2,8 +2,8 @@ Understanding DSH
 =================
 
 Below are notes on my attempts to understand how DSH works.  My analysis is
-based on a case study of an example query from "Language-integrated Provenance"
-paper and reading DSH source code.
+based on reading DSH source code and a case study of an example query from
+"Language-integrated Provenance" paper.
 
 
 DSH internals
@@ -25,8 +25,8 @@ data Exp a where
 ```
 
 Applications are represented by `AppE` using `Fun` GADT from
-`Database.DSH.Frontend.Builtins`.  It encodes all allowed functions together
-with their types, e.g:
+`Database.DSH.Frontend.Builtins`.  It encodes all database allowed functions
+together with their types, e.g:
 
 ```haskell
 data Fun a b where
@@ -148,9 +148,6 @@ constraint is crucially used on the signature of `table`:
 table :: (QA a, TA a) => String -> [...] -> Q [a]
 ```
 
-**TODO:** explore whether types that contain nested tuples can be made into
-  instances of `TA`.
-
 
 #### Q newtype
 
@@ -202,7 +199,7 @@ where `Key` is a non-empty list of strings:
 newtype Key = Key (NonEmpty String)
 ```
 
-`table` function from `Database.DSH.Frontend.Externals` is essentialy a smart
+`table` function from `Database.DSH.Frontend.Externals` is essentially a smart
 constructor for table expressions:
 
 ```haskell
@@ -211,8 +208,8 @@ table name schema hints = Q (TableE (TableDB name schema hints))
 ```
 
 Interesting thing about it is that return type does not depend in any way on the
-arguments.  In other words, type siganture or table declarations *seems*
-mandatory to define what kind of data is actualy stored in a table.
+arguments.  In other words, type of table declaration is essential to determine
+what kind of data is actually stored in a table.
 
 
 ### Compilation pipeline
@@ -272,7 +269,7 @@ DSH's `Exp` values.
 
 ### Comprehension language (CL)
 
-Comprehension langauge is the next intermediate representation used by DSH in
+Comprehension language is the next intermediate representation used by DSH in
 its pipeline.  CL is explicitly typed.  Translation from expression language to
 comprehension language is performed by `translate` function in
 `Database.DSH.Translate.Frontend2CL` module.
@@ -309,6 +306,7 @@ data AggrFun = Length | Avg | Minimum | Maximum | And | Or | Sum
 One important thing worth noting is that aggregation in CL is denoted explicitly
 using dedicated AST data type.
 
+
 #### Types
 
 ```haskell
@@ -319,12 +317,13 @@ data Type  = ListT Type
 data ScalarType  = IntT | BoolT | DoubleT | StringT | UnitT | DecimalT | DateT
 ```
 
-#### Translation
+
+#### Translation from frontend language to CL
 
 The most interesting part of `translate` is translation of function application,
 which is in fact delegated to `translateApp`.  Here are some example of handling
 translation from `Exp` to `CL.Expr` by `translateApp` (module code cleanup and
-abbrevation - actual source code is minimaly different):
+abbreviation - actual source code is minimally different):
 
 ```haskell
 translateApp ConcatMap (Tuple2E (LamE lam) xs) = do
@@ -357,7 +356,81 @@ singleGenComp bodyExp v gen =
 ```
 
 Note that `minimum` inserts explicit aggregation operator and also propagates
-the type of agregated expression.
+the type of aggregated expression.
+
+
+#### Translation of table declarations into CL
+
+It seems to me that the crucial bit to implementing provenance is modifying the
+translation of table declarations.  The initial representation in the frontend
+language is translated into `BaseTableSchema` data type defined in
+`Database.DSH.Common.Lang`:
+
+```haskell
+data BaseTableSchema = BaseTableSchema
+    { tableCols     :: N.NonEmpty ColumnInfo
+    , tableKeys     :: N.NonEmpty Key
+    , tableNonEmpty :: Emptiness
+    } deriving (Eq, Ord, Show)
+```
+
+Here's how translation is done in `Database.DSH.Translate.Frontend2CL`:
+
+```haskell
+translate (TableE (TableDB tableName colNames hints)) = do
+    -- Reify the type of the table expression
+    let ty = reify (undefined :: a)            -- (1)
+    let colNames' = fmap L.ColName colNames
+    let bty = translateType ty                 -- (2)
+
+    return $ CP.table bty tableName (schema tableName colNames' bty hints)
+
+schema :: String -> N.NonEmpty L.ColName -> Ty.Type -> TableHints -> L.BaseTableSchema
+schema tableName cols ty hints =
+    L.BaseTableSchema { L.tableCols     = colTys
+                      , L.tableKeys     = keys (keysHint hints)
+                      , L.tableNonEmpty = ne $ nonEmptyHint hints
+                      }
+  where
+    colTys :: NonEmpty L.ColumnInfo
+    colTys = case Ty.elemT ty of
+        Ty.TupleT ts@(_:_) | length ts == N.length cols ->
+            case mapM Ty.scalarType ts of    -- (3)
+                Just (st : sts) -> N.zip cols (st :| sts)
+                _               -> error errMsgScalar
+        (Ty.ScalarT st)      | N.length cols == 1       ->
+            N.zip cols (st :| [])
+        _                                              ->
+            error errMsgLen
+```
+
+There are three important bits in this code:
+
+  - **reify type of table expression** - `a` is a type of table expression in
+    the source program.  This should be a list of some data types.  For example,
+    in the case study below this will be `[Agency]`.  `Rep` of this actual type
+    is reified to obtain type's frontend representation.
+
+  - **translate type of table into CL representation** - frontend type is
+    translated into internal `Type` defined in `Database.DSH.Common.Type`.
+
+    ```haskell
+    data Type = ListT Type | TupleT [Type] | ScalarT ScalarType
+              deriving (Show, Eq, Ord)
+
+    data ScalarType = IntT | BoolT | DoubleT | StringT | UnitT | DecimalT | DateT
+                    deriving (Show, Eq, Ord)
+    ```
+
+    This representation is used throughout the remaining parts of the
+    compilation pipeline.
+
+  - **check that table stores scalar (flat) data** - `Ty.elemT` assumes its
+    argument is a `ListT` and returns the type of elements in a list.  Then
+    `mapM Ty.scalarType ts` will return a list of scalar types stored in
+    components of a tuple (records representing table rows are internally stored
+    as tuples).  Note that if at least one field is not a scalar type then the
+    whole expression will return a `Nothing`, resulting in compilation error.
 
 
 Case study
@@ -542,11 +615,6 @@ AppE1 _ Concat (Comp (ListT ..) body
 S - singleton list constructor
 BindQ - stores a String (`a`) and a table expression
 ```
-
-`SegmentAlgebra` type class also looks interesting -- resume investigation from
-here.  It looks like the right place to inject provenance will be in the
-instance of that type class inside `dsh-sql` submodule,
-`Database.DSH.Backend.Sql.Relational.Natural` module
 
 Generated query
 ---------------

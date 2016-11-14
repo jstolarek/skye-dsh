@@ -32,27 +32,18 @@ Regarding Q22 in test-tpch taking too long to run:
 > then to SQL in dsh-sql.
 
 
-TODO
-----
+Open questions and TODOs
+------------------------
 
   * Figure out how function application works in DSH.  Can I use lambdas?  If I
     call my own functions what constructs can they contain?  What happens if
     they call functions unsupported by DSH?
 
-  * It seems that `QA` and `TA` classes overlap.  If I create a record type that
-    stores a nested tuple, can I store it in a database?
+  * It seems that `QA` and `TA` classes overlap.
 
-  * Figure out how to use PostgreSQL OID fields to assign initial
-    where-provenance row id
-
-  * Have a function to discard provenance information:
-
-    ```haskell
-    unprov :: WhereProv a -> a
-    unprov (a, _) = a
-    ```
+  * explore whether types that contain nested tuples can be made into instances
+    of `TA`.
 
   * provenance should index rows by their keys, not by integers.  But how do I
     encode that?  Existentials?  Type classes?
 
-  * in which situations do we insert `Nothing` as where-provenance?
