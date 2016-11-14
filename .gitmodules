@@ -3,13 +3,13 @@
 	url = git@github.com:jstolarek/dsh.git
 [submodule "modules/dsh-sql"]
 	path = modules/dsh-sql
-	url = git@github.com:ulricha/dsh-sql.git
+	url = git@github.com:jstolarek/dsh-sql.git
 [submodule "modules/algebra-sql"]
 	path = modules/algebra-sql
-	url = git@github.com:ulricha/algebra-sql.git
+	url = git@github.com:jstolarek/algebra-sql.git
 [submodule "modules/algebra-dag"]
 	path = modules/algebra-dag
-	url = git@github.com:ulricha/algebra-dag.git
+	url = git@github.com:jstolarek/algebra-dag.git
 [submodule "modules/dsh-example-queries"]
 	path = modules/dsh-example-queries
-	url = git@github.com:ulricha/dsh-example-queries.git
+	url = git@github.com:jstolarek/dsh-example-queries.git
