@@ -22,6 +22,20 @@ q1 = [ tup2 (et_nameQ et) (p_phoneQ a)
      , et_typeQ et == "boat"
      ]
 
+-- | q1 with inlined definition of agenciesP
+q1i :: Q [(Text, WhereProv Text)]
+q1i = [ tup2 (et_nameQ et) (p_phoneQ ap)
+      | a  <- agencies
+      , let ap = agencyP_prov (a_idQ a) (a_nameQ a) (a_based_inQ a)
+                              (tup2 (a_phoneQ a)
+                                    (just $ whereProvData (toQ "agencies")
+                                                          (toQ "a_phone" )
+                                                          (a_idQ a)))
+      , et <- externalTours
+      , p_nameQ ap  == et_nameQ et
+      , et_typeQ et == "boat"
+      ]
+
 -- | Alternative version of q1 presented in Section 2.2 of the paper
 q1' :: Q [(Text, WhereProv Text)]
 q1' = [ tup2 (et_nameQ et) (p_phoneQ a)
