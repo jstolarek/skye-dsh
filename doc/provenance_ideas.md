@@ -237,6 +237,28 @@ Some open questions and loose thoughts
     inside `vecTableRef`.
 
 
+Where-provenance by explicit construction
+-----------------------------------------
+
+```sql
+SELECT a2.a_id AS r1, a3.et_id AS r2, a2.a_id AS o1,
+       a3.et_id AS o2, 'agencies' AS i1, 'a_phone' AS i2, a2.a_id AS i3
+FROM agencies AS a2,
+     externaltours AS a3
+WHERE (a2.a_name = a3.et_name)
+      AND (a3.et_type = 'boat')
+ORDER BY r1 ASC, r2 ASC, o1 ASC, o2 ASC
+
+SELECT a0.a_id AS k1, a1.et_id AS k2, a0.a_id AS o1,
+       a1.et_id AS o2, a1.et_name AS i1, a0.a_phone AS i2
+FROM agencies AS a0,
+     externaltours AS a1
+WHERE (a0.a_name = a1.et_name)
+      AND (a1.et_type = 'boat')
+ORDER BY o1 ASC, o2 ASC
+```
+
+
 Some notes on "Language-integrated Provenance in Links" paper
 -------------------------------------------------------------
 

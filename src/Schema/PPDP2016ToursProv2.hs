@@ -41,7 +41,7 @@ agenciesP =
     [ agencyP_prov (a_idQ a) (a_nameQ a) (a_based_inQ a)
                    (tup2 (a_phoneQ a)
                          (just $ whereProvData (toQ "agencies")
-                                              (toQ "a_phone" ) (a_idQ a)))
+                                               (toQ "a_phone" ) (a_idQ a)))
     | a <- agencies ]
 
 -- Smart constructor generates empty provenance information.  Obviously, the
