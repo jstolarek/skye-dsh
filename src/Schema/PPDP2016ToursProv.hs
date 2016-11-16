@@ -8,7 +8,6 @@ module Schema.PPDP2016ToursProv where
 import           Database.DSH
 import           Database.DSH.Provenance
 import           Data.List.NonEmpty
-import qualified Data.Sequence as S
 
 data Agency = Agency
     { a_id       :: Integer
@@ -75,9 +74,20 @@ instance View (Q Agency) where
 -- JSTOLAREK: smart constructor generates empty provenance information.
 -- Obviously, the data is not pulled from the database.
 agency :: Q Integer -> Q Text -> Q Text -> Q Text -> Q Agency
-agency (Q e_a8D1) (Q e_a8D2) (Q e_a8D3) (Q e_a8D4)
-  = Q (TupleConstE (Tuple4E e_a8D1 e_a8D2 e_a8D3
-                            (TupleConstE (Tuple2E e_a8D4 (ListE $ S.empty)))))
+agency (Q e_a8D1) (Q e_a8D2) (Q e_a8D3) e_a8D4
+  = Q (TupleConstE (Tuple4E e_a8D1 e_a8D2 e_a8D3 (unQ . emptyProvQ $ e_a8D4)))
+
+-- JSTOLAREK: but we might also want to reconstruct an agency with some known
+-- provenance
+agencyP :: Q Integer -> Q Text -> Q Text -> Q (WhereProv Text) -> Q Agency
+agencyP (Q e_a8D1) (Q e_a8D2) (Q e_a8D3) (Q e_a8D4)
+  = Q (TupleConstE (Tuple4E e_a8D1 e_a8D2 e_a8D3 e_a8D4))
+
+-- An open question is what functions to generate if we have more than one field
+-- with provenance tracking?  I would say that there should be two constructors
+-- at most: one without provenance information and another with all possible
+-- provenance information.  Then we can either discard where-provenance
+-- information or add empty provenance to a value.
 
 a_idQ :: Q Agency -> Q Integer
 a_idQ (view -> (x_aap2, _, _, _)) = x_aap2
