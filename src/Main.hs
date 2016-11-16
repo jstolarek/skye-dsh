@@ -12,7 +12,8 @@ import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
 import           Queries.PPDP2016Tours
-import qualified Queries.PPDP2016ToursProv as Prov
+--import qualified Queries.PPDP2016ToursProv  as Prov
+import qualified Queries.PPDP2016ToursProv2 as Prov2
 
 getConn :: String -> IO Connection
 getConn dsn = connectODBC (printf "DSN=%s" dsn)
@@ -35,7 +36,10 @@ main = do
             execQ dshConn q2
 
             -- queries with provenance tracking
-            execQ dshConn Prov.q1
+            execQ dshConn Prov2.q1
+            execQ dshConn Prov2.q1'
+            execQ dshConn Prov2.q1''
+            execQ dshConn Prov2.q2
             disconnect c
         _     ->
             error "Pass ODBC connection name as a single argument"
