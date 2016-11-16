@@ -86,8 +86,13 @@ a_nameQ (view -> (_, x_aap3, _, _)) = x_aap3
 a_based_inQ :: Q Agency -> Q Text
 a_based_inQ (view -> (_, _, x_aap4, _)) = x_aap4
 
--- JSTOLAREK: these two have extra calls to provQ/unprovQ
-a_phoneQ :: Q Agency -> Q Text
-a_phoneQ (view -> (_, _, _, x_aap5)) = unprovQ x_aap5
+-- JSTOLAREK: a different type signature
+a_phoneQ :: Q Agency -> Q (WhereProv Text)
+a_phoneQ (view -> (_, _, _, x_aap5)) = x_aap5
+
+-- JSTOLAREK: these two have extra calls to dataQ/provQ
+a_phone_dataQ :: Q Agency -> Q Text
+a_phone_dataQ (view -> (_, _, _, x_aap5)) = dataQ x_aap5
+
 a_phone_provQ :: Q Agency -> Q WhereProvInfo
 a_phone_provQ (view -> (_, _, _, x_aap5)) = provQ x_aap5

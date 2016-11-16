@@ -60,7 +60,7 @@ data NullOp = LitTable ([Tuple], [TypedAttr])
             deriving (Ord, Eq, Show)
 ```
 
-`TableAlgebra` is made into an instance of `SegmentAlgebra`
+`TableAlgebra` is made into an instance of `SegmentAlgebra`.
 
 
 These are located in `Database.DSH.Backend` inside DSH (not sure if this is
