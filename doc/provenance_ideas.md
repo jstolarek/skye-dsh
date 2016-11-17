@@ -244,7 +244,7 @@ Downsides of this approach:
 
   * duplicate data type required, need some way to handle name clashes
 
-  * two SQL queries generated:
+  * Original DSH two SQL queries generated:
 
     ```sql
     SELECT a2.a_id AS r1, a3.et_id AS r2, a2.a_id AS o1,
@@ -274,11 +274,25 @@ Downsides of this approach:
     ORDER BY o1 ASC, o2 ASC
     ```
 
+    I have introduced modification to DSH that resolves the problem by encoding
+    `Maybe a` as a pair `(Bool, a)`, where the first component is an explicit
+    tag indicating whether this is encoding of `Just` or not.  This encoding
+    forces us to rely on `Data.Default` to generate default values in case of
+    `Nothing`.  It is an open question whether this affects performance.  The
+    resulting SQL query is:
+
+    ```SQL
+    SELECT a0.a_id AS o1, a1.et_id AS o2, a1.et_name AS i1,
+           a0.a_phone AS i2, TRUE AS i3, 'agencies' AS i4, 'a_phone' AS i5,
+           a0.a_id AS i6
+    FROM agencies AS a0, externaltours AS a1
+    WHERE (a0.a_name = a1.et_name) AND (a1.et_type = 'boat')
+    ORDER BY o1 ASC, o2 ASC
+    ```
+
   * smart constructor for `whereProvData` required, so we expose internal
     implementation of where-provenance.  Perhaps this wouldn't be necessary if
     we generated code with TH.
-
-
 
 
 Some notes on "Language-integrated Provenance in Links" paper

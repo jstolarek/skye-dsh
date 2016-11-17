@@ -5,11 +5,6 @@ Open questions, ideas, further steps and other TODOs
     call my own functions what constructs can they contain?  What happens if
     they call functions unsupported by DSH?
 
-  * Change DSH's representation of `Maybe` to use a tuple that contains a `Bool`
-    tag and a provenance value.  If tag is `False` (no provenance) the
-    provenance value should be `undefined`.  This is of course only the
-    under-the-hood encoding.
-
   * Implement flat approach to where-provenance, ie. without using a `Maybe`.
     One alternative is to assume it is always present, another is to assume a
     `Bool` tag that says whether provenance is present.  In such case we must be

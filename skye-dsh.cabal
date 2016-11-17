@@ -16,6 +16,7 @@ executable skye-dsh
                        dsh-sql == 0.3.0.1,
                        HDBC,
                        HDBC-odbc,
+                       data-default,
 
                        -- JSTOLAREK: temporary dependencies for prototyping
                        containers

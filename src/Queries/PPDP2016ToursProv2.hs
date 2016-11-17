@@ -36,6 +36,16 @@ q1i = [ tup2 (et_nameQ et) (p_phoneQ ap)
       , et_typeQ et == "boat"
       ]
 
+-- | q1 with empty provenance
+q1n :: Q [(Text, WhereProv Text)]
+q1n = [ tup2 (et_nameQ et) (p_phoneQ ap)
+      | a  <- agencies
+      , let ap = agencyP (a_idQ a) (a_nameQ a) (a_based_inQ a) (a_phoneQ a)
+      , et <- externalTours
+      , p_nameQ ap  == et_nameQ et
+      , et_typeQ et == "boat"
+      ]
+
 -- | Alternative version of q1 presented in Section 2.2 of the paper
 q1' :: Q [(Text, WhereProv Text)]
 q1' = [ tup2 (et_nameQ et) (p_phoneQ a)
