@@ -260,9 +260,25 @@ Downsides of this approach:
     ORDER BY o1 ASC, o2 ASC
     ```
 
+    This happens because provenance annotation is a `Maybe`, which is internally
+    represented by DSH as a list (`Just` is a singleton list, `Nothing` is an
+    empty list).  If we assume that the provenance annotation is always present
+    we get a single SQL query just as we would expect:
+
+    ```SQL
+    SELECT a0.a_id AS o1, a1.et_id AS o2, a1.et_name AS i1,
+           a0.a_phone AS i2, 'agencies' AS i3, 'a_phone' AS i4,
+           a0.a_id AS i5
+    FROM agencies AS a0,  externaltours AS a1
+    WHERE (a0.a_name = a1.et_name) AND (a1.et_type = 'boat')
+    ORDER BY o1 ASC, o2 ASC
+    ```
+
   * smart constructor for `whereProvData` required, so we expose internal
     implementation of where-provenance.  Perhaps this wouldn't be necessary if
     we generated code with TH.
+
+
 
 
 Some notes on "Language-integrated Provenance in Links" paper
