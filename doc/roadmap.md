@@ -5,6 +5,17 @@ Open questions, ideas, further steps and other TODOs
     call my own functions what constructs can they contain?  What happens if
     they call functions unsupported by DSH?
 
+  * Change DSH's representation of `Maybe` to use a tuple that contains a `Bool`
+    tag and a provenance value.  If tag is `False` (no provenance) the
+    provenance value should be `undefined`.  This is of course only the
+    under-the-hood encoding.
+
+  * Implement flat approach to where-provenance, ie. without using a `Maybe`.
+    One alternative is to assume it is always present, another is to assume a
+    `Bool` tag that says whether provenance is present.  In such case we must be
+    able to create default value of provenance.  This value is of course bogus
+    but it would never be inspected.
+
   * Investigate further into DSH to understand how Haskell data types are
     reconstructed after receiving data from the execution of SQL query.  Can we
     insert where-provenance at this point?  Do we have all the required
@@ -15,10 +26,14 @@ Open questions, ideas, further steps and other TODOs
     It would be nice to re-do them in DSH and perhaps compare them to Links.
     This is potentially time consuming, so a good idea would be start with some
     planning.  One thing to check is comparing generated query plans for Links
-    and DSH.
+    and DSH.  Things to test:
 
-  * Directly related to the above, how is record field selection compiled?  This
-    is very important for dealing with automatic where-provenance annotations:
+      - performance of where-provenance using `Maybe` (ie. generating extra SQL
+        query for each where-provenance annotated field) vs. approach that
+        always assumes presence of provenance vs. Links
+
+      - number of generated SQL queries.  In theory we know the number of
+        queries that should be generated, but it is worth double-checking.
 
   * **Automatic where-provenance annotations:** it should be fairly simple to
     write a TH function that adds where-provenance annotation to every field of

@@ -608,23 +608,56 @@ expression:
 
 ```haskell
 -- original form
-a <- agencies
-body
+do
+  a <- agencies
+  ...body...
 
 -- desugaring of do-notation
-agencies >>= (\a -> body)
+agencies >>= (\a -> ...body...)
 
 -- DSH frontend desugaring
-concatMap (\a -> body) agencies
+concatMap (\a -> ...body...) agencies
 
 -- call to concatMap produces
-Q (AppE ConctaMap (pairE (LamE (toLam (\a -> body))) agencies))
+Q (AppE ConctaMap (pairE (LamE (toLam (\a -> ...body...))) agencies))
 -- where
 agencies = (TableE (TableDB "agencies" col_names hints))
 pairE a b = TupleConstE (Tuple2E a b)
 toLam :: (QA a,QA b) => (Q a -> Q b) -> Exp (Rep a) -> Exp (Rep b)
 toLam f = unQ . f . Q
 ```
+
+### Compiling record projections
+
+Consider a record projection `(a_phoneQ a)`.  Recall the definition of
+`a_phoneQ`:
+
+```haskell
+a_phoneQ :: Q Agency -> Q Text
+a_phoneQ (view -> (_, _, _, phone)) = phone
+```
+
+where `view` inserts tuple projections to extract components of a tuple:
+
+
+```haskell
+view (Q agency)
+  = ((Q $ (AppE (TupElem Tup4_1) agency)),
+     (Q $ (AppE (TupElem Tup4_2) agency)),
+     (Q $ (AppE (TupElem Tup4_3) agency)),
+     (Q $ (AppE (TupElem Tup4_4) agency)))
+```
+
+Expanding the view pattern in the definition of `a_phoneQ`:
+
+```haskell
+a_phoneQ :: Q Agency -> Q Text
+a_phoneQ agency = case view agency of
+                    (_, _, _, phone)) -> phone
+```
+
+In other words a call `(a_phoneQ a)` is compiled to `Q (AppE (TupElem Tup4_4)
+a)`, ie. record selector is turned into explicit application of tuple selector.
 
 
 Query compilation to SQL
