@@ -34,12 +34,14 @@ main = do
             execQ dshConn q1'
             execQ dshConn q1''
             execQ dshConn q2
-
             -- queries with provenance tracking
             execQ dshConn Prov2.q1
             execQ dshConn Prov2.q1'
             execQ dshConn Prov2.q1''
             execQ dshConn Prov2.q2
             disconnect c
-        _     ->
-            error "Pass ODBC connection name as a single argument"
+        _     -> do
+            putStrLn "Prov2.q1"
+            showComprehensionsQ optResugar Prov2.q1
+            putStrLn "Prov2.q1'"
+            showComprehensionsQ optResugar Prov2.q1'
