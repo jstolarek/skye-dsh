@@ -30,6 +30,14 @@ Open questions, ideas, further steps and other TODOs
       - number of generated SQL queries.  In theory we know the number of
         queries that should be generated, but it is worth double-checking.
 
+  * semantics of where-provenance should follow semantics of the query language.
+    On the surface it looks like DSH is very similar to Links and that having
+    where-provenance as a `Maybe` is sufficient.  However, under the hood it
+    looks like DSH supports joins.  With joins `Maybe` no longer suffices to
+    express where-provenance - we need sets.  So the question is: does DSH
+    really compile queries to joins?  If so then in what situations do the DSH
+    comprehensions compile to joins?
+
   * **Automatic where-provenance annotations:** it should be fairly simple to
     write a TH function that adds where-provenance annotation to every field of
     a record type that represents a table row.  (Or perhaps a type family would
