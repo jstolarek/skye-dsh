@@ -228,6 +228,55 @@ wrapped in `Q`.  It seems that structure of `ToView a` is identical to `Rep a`,
 except that recursion happens in `Q` rather than in `Rep`.
 
 
+Compiling function applications
+-------------------------------
+
+An important question is whether it is possible to place function calls inside
+DSH queries.  Short answer is: yes, if you're very careful.  Say, for example,
+that we want to write a query that returns a list of agencies (see case study
+below for definition of `Agency`) but with names of agencies capitalized.  DSH
+represents strings using `Text` data type.  `Data.Text` provides `toUpper`
+function that turns a string into upper case.  But there is no direct way of
+calling that function on agency's name.  This is because DSH stores all its data
+inside a `Q` newtype, which ensures that their internal representation is
+correct.  Now, we might try to write our code like this:
+
+```haskell
+toUpperQ :: Q Text -> Q Text
+toUpperQ (Q t) = toQ (T.toUpper (frExp t))
+
+nameToUpperQ :: Q [Agency]
+nameToUpperQ = [ agency (a_idQ a) name (a_based_inQ a) (a_phoneQ a)
+               | a <- agencies
+               , let name = toUpperQ (a_nameQ a) ]
+```
+
+`toUpperQ` converts DSH's internal expression into `Text` data type, applies
+`toUpper` from `Data.Text` and converts the result back into DSH's internal
+syntax tree.  This code compiles but does not work as intended.  This is caused
+by implementation of `frExp` (from `Database.DSH.Frontend.Externals`):
+
+```haskell
+instance QA Text where
+    type Rep Text = Text
+    toExp = TextE
+    frExp (TextE t) = t
+    frExp _ = $impossible
+```
+
+Notice that `frExp` is only defined for *values* of type `Q Text`, but `Q Text`
+can also store *expressions* that are not in normal form.  Since `(a_nameQ a)`
+is compiled to a tuple projection (see "Compiling record projections" in case
+study below), call to `frExp` will end up in exception. And so there is no way
+to write the code we wanted to write.
+
+The conclusion is that it is possible to have function application but only if
+these applications *grow* the syntax tree without inspecting it.  (Note that if
+two types have the same internal representation then it is possible to have a
+safe cast between them, eg. `pairToEither` and `eitherToPair` functions in
+`Externals` module.  In this case the syntax tree does not grow.)
+
+
 Table declarations
 ------------------
 

@@ -1,10 +1,6 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Figure out how function application works in DSH.  Can I use lambdas?  If I
-    call my own functions what constructs can they contain?  What happens if
-    they call functions unsupported by DSH?
-
   * Implement flat approach to where-provenance, ie. without using a `Maybe`.
     One alternative is to assume it is always present, another is to assume a
     `Bool` tag that says whether provenance is present.  In such case we must be
