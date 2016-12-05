@@ -5,5 +5,7 @@ dist
 cabal.sandbox.config
 .cabal-sandbox
 
-# database connection logs
+# various DSH logs
 *.log
+*.plan
+*.shape
