@@ -11,8 +11,8 @@ import           Database.DSH.Backend
 import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
-import           Queries.PPDP2016Tours
---import qualified Queries.PPDP2016ToursProv  as Prov
+import qualified Queries.PPDP2016Tours      as Tours
+import qualified Queries.PPDP2016ToursProv  as Prov
 import qualified Queries.PPDP2016ToursProv2 as Prov2
 
 getConn :: String -> IO Connection
@@ -23,6 +23,18 @@ getConn dsn = connectODBC (printf "DSN=%s" dsn)
 execQ :: (QA a, Show a) => BackendConn PgVector -> Q a -> IO ()
 execQ c q = runQ naturalPgCodeGen c q >>= print
 
+debugFunctions :: [ (CLOptimizer -> Q a -> IO (), String) ]
+debugFunctions =  -- CL
+                  [ ( showComprehensionsQ, "CL: showComprehensionsQ" )
+                  , ( showDesugaredOptQ  , "CL: showDesugaredOptQ"   )
+                  -- FKL
+                  , ( showLiftedQ        , "FKL: showLiftedQ"        )
+                  , ( showLiftedOptQ     , "FKL: showLiftedOptQ"     )
+                  , ( showFlattenedQ     , "FKL: showFlattenedQ"     )
+                  , ( showFlattenedOptQ  , "FKL: showFlattenedOptQ"  )
+                  ]
+
+
 main :: IO ()
 main = do
     argv <- getArgs
@@ -30,18 +42,26 @@ main = do
         [dsn] -> do
             c <- getConn dsn
             let dshConn = pgConn c
-            execQ dshConn q1
-            execQ dshConn q1'
-            execQ dshConn q1''
-            execQ dshConn q2
-            -- queries with provenance tracking
+            putStrLn "Queries without provenance"
+            execQ dshConn Tours.q1
+            execQ dshConn Tours.q1'
+            execQ dshConn Tours.q1''
+            execQ dshConn Tours.q2
+
+            putStrLn "Queries with built-in provenance tracking"
+            execQ dshConn Prov.q1
+            execQ dshConn Prov.q1'
+            execQ dshConn Prov.q1''
+            execQ dshConn Prov.q2
+
+            putStrLn "Queries with provenance tracking added by hand"
             execQ dshConn Prov2.q1
             execQ dshConn Prov2.q1'
             execQ dshConn Prov2.q1''
             execQ dshConn Prov2.q2
+            execQ dshConn Prov.q1
             disconnect c
         _     -> do
-            putStrLn "Prov2.q1"
-            showComprehensionsQ optResugar Prov2.q1
-            putStrLn "Prov2.q1'"
-            showComprehensionsQ optResugar Prov2.q1'
+            putStrLn "Prov.q1"
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar Prov.q1)
+                  debugFunctions

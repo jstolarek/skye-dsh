@@ -36,6 +36,20 @@ q1i = [ tup2 (et_nameQ et) (p_phoneQ ap)
       , et_typeQ et == "boat"
       ]
 
+-- | q1 with inlined definition of agenciesP
+q1i' :: Q [(Text, WhereProv Text)]
+q1i' = [ tup2 (et_nameQ et) (p_phoneQ a)
+       | a  <- [ agencyP_prov (a_idQ a') (a_nameQ a') (a_based_inQ a')
+                              (tup2 (a_phoneQ a')
+                                    (just $ whereProvData (toQ "agencies")
+                                                          (toQ "a_phone" )
+                                                          (a_idQ a')))
+               | a' <- agencies ]
+       , et <- externalTours
+       , p_nameQ a  == et_nameQ et
+       , et_typeQ et == "boat"
+       ]
+
 -- | q1 with empty provenance
 q1n :: Q [(Text, WhereProv Text)]
 q1n = [ tup2 (et_nameQ et) (p_phoneQ ap)

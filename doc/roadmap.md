@@ -53,3 +53,13 @@ Open questions, ideas, further steps and other TODOs
 
   * Provenance should index rows by their keys, not by integers.  But how do I
     encode that?  Existentials?  Type classes?
+
+Code TODO
+---------
+
+  * modify definition of `Type` in `Database.DSH.Common.Type` to include
+    explicit provenance types. This requires me to write QA instances manually
+
+  * generate all provenance boilerplate using TH
+
+  * code cleanup: hide abstractions, etc

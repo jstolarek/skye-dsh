@@ -32,7 +32,7 @@ deriveTA   ''AgencyP
 deriveView ''AgencyP
 
 -- JSTOLAREK: prototype code below.  In the final version of library all these
--- code needs to be generated with TH or in other ways by provenance
+-- code needs to be generated with TH
 
 -- This query constructs a list of agencies with provenance information added to
 -- phone field.
