@@ -1,11 +1,6 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Create a data type that attaches where-provenance to a type.  This type will
-    be isomorphic to a tuple but with a hidden constructor, which will prevent
-    user from forging provenance.  I might need to write QA instances by hand.
-    I definitely do not want a smart constructor.
-
   * Experiment with polymorphic keys, ie. keys that are not necesarilly
     integers.  At the moment DSH can't derive instances of QA for polymorphic
     types but it I write them by hand this might work.
