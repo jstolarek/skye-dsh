@@ -16,7 +16,7 @@ Open questions, ideas, further steps and other TODOs
     `Database.DSH.Common.Type`.  See two emails to James on (6/12/16).
 
   * Cleanup all the prototyping mess: hide abstractions and exports that were
-    exposed in DSH, perhaps delete queries with transformations written by hand?
+    exposed in DSH
 
   * **Benchmark DSH:** in the where-provenance paper there are some benchmarks.
     It would be nice to re-do them in DSH and perhaps compare them to Links.
@@ -67,10 +67,3 @@ Open questions, ideas, further steps and other TODOs
     pass would figure out where to put where-provenance information.
 
   * It seems that `QA` and `TA` classes overlap.
-
-Code TODO
----------
-
-  * generate all provenance boilerplate using TH
-
-  * code cleanup: hide abstractions, etc

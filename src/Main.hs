@@ -13,7 +13,6 @@ import           Database.DSH.Compiler
 
 import qualified Queries.PPDP2016Tours      as Tours
 import qualified Queries.PPDP2016ToursProv  as Prov
-import qualified Queries.PPDP2016ToursProv2 as Prov2
 
 getConn :: String -> IO Connection
 getConn dsn = connectODBC (printf "DSN=%s" dsn)
@@ -54,12 +53,6 @@ main = do
             execQ dshConn Prov.q1''
             execQ dshConn Prov.q2
 
-            putStrLn "Queries with provenance tracking added by hand"
-            execQ dshConn Prov2.q1
-            execQ dshConn Prov2.q1'
-            execQ dshConn Prov2.q1''
-            execQ dshConn Prov2.q2
-            execQ dshConn Prov.q1
             disconnect c
         _     -> do
             putStrLn "Prov.q1"
