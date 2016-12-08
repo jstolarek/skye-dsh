@@ -1,17 +1,22 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Implement flat approach to where-provenance, ie. without using a `Maybe`.
-    One alternative is to assume it is always present, another is to assume a
-    `Bool` tag that says whether provenance is present.  In such case we must be
-    able to create default value of provenance.  This value is of course bogus
-    but it would never be inspected.
+  * Create a data type that attaches where-provenance to a type.  This type will
+    be isomorphic to a tuple but with a hidden constructor, which will prevent
+    user from forging provenance.  I might need to write QA instances by hand.
+    I definitely do not want a smart constructor.
 
-  * Investigate further into DSH to understand how Haskell data types are
-    reconstructed after receiving data from the execution of SQL query.  Can we
-    insert where-provenance at this point?  Do we have all the required
-    information to do that (table name, column name)?  I'm afraid these might be
-    lost together with the table schema in `vecTableRef`.
+  * Experiment with polymorphic keys, ie. keys that are not necesarilly
+    integers.  At the moment DSH can't derive instances of QA for polymorphic
+    types but it I write them by hand this might work.
+
+  * Update TH functions for generating boilerplate.
+
+  * Add ProvenanceT as another possible type to definition of `Type` in
+    `Database.DSH.Common.Type`.  See two emails to James on (6/12/16).
+
+  * Cleanup all the prototyping mess: hide abstractions and exports that were
+    exposed in DSH, perhaps delete queries with transformations written by hand?
 
   * **Benchmark DSH:** in the where-provenance paper there are some benchmarks.
     It would be nice to re-do them in DSH and perhaps compare them to Links.
@@ -26,6 +31,12 @@ Open questions, ideas, further steps and other TODOs
       - number of generated SQL queries.  In theory we know the number of
         queries that should be generated, but it is worth double-checking.
 
+  * Investigate further into DSH to understand how Haskell data types are
+    reconstructed after receiving data from the execution of SQL query.  Can we
+    insert where-provenance at this point?  Do we have all the required
+    information to do that (table name, column name)?  I'm afraid these might be
+    lost together with the table schema in `vecTableRef`.
+
   * semantics of where-provenance should follow semantics of the query language.
     On the surface it looks like DSH is very similar to Links and that having
     where-provenance as a `Maybe` is sufficient.  However, under the hood it
@@ -33,6 +44,12 @@ Open questions, ideas, further steps and other TODOs
     express where-provenance - we need sets.  So the question is: does DSH
     really compile queries to joins?  If so then in what situations do the DSH
     comprehensions compile to joins?
+
+  * Implement flat approach to where-provenance, ie. without using a `Maybe`.
+    One alternative is to assume it is always present, another is to assume a
+    `Bool` tag that says whether provenance is present.  In such case we must be
+    able to create default value of provenance.  This value is of course bogus
+    but it would never be inspected.
 
   * **Automatic where-provenance annotations:** it should be fairly simple to
     write a TH function that adds where-provenance annotation to every field of
@@ -51,14 +68,8 @@ Open questions, ideas, further steps and other TODOs
 
   * It seems that `QA` and `TA` classes overlap.
 
-  * Provenance should index rows by their keys, not by integers.  But how do I
-    encode that?  Existentials?  Type classes?
-
 Code TODO
 ---------
-
-  * modify definition of `Type` in `Database.DSH.Common.Type` to include
-    explicit provenance types. This requires me to write QA instances manually
 
   * generate all provenance boilerplate using TH
 
