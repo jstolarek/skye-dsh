@@ -1,9 +1,7 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Experiment with polymorphic keys, ie. keys that are not necesarilly
-    integers.  At the moment DSH can't derive instances of QA for polymorphic
-    types but it I write them by hand this might work.
+  * Create a type synonym that defaults key type to Integer
 
   * Update TH functions for generating boilerplate.
 
