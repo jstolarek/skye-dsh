@@ -1,8 +1,6 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Create a type synonym that defaults key type to Integer
-
   * Update TH functions for generating boilerplate.
 
   * Add ProvenanceT as another possible type to definition of `Type` in

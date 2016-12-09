@@ -11,8 +11,9 @@ import           Database.DSH.Backend
 import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
-import qualified Queries.PPDP2016Tours      as Tours
-import qualified Queries.PPDP2016ToursProv  as Prov
+import qualified Queries.PPDP2016.Tours.NoProv            as NP
+import qualified Queries.PPDP2016.Tours.WhereProv         as WP
+import qualified Queries.PPDP2016.Tours.WhereProvPolyKeys as PK
 
 getConn :: String -> IO Connection
 getConn dsn = connectODBC (printf "DSN=%s" dsn)
@@ -41,20 +42,27 @@ main = do
         [dsn] -> do
             c <- getConn dsn
             let dshConn = pgConn c
-            putStrLn "Queries without provenance"
-            execQ dshConn Tours.q1
-            execQ dshConn Tours.q1'
-            execQ dshConn Tours.q1''
-            execQ dshConn Tours.q2
 
-            putStrLn "Queries with built-in provenance tracking"
-            execQ dshConn Prov.q1
-            execQ dshConn Prov.q1'
-            execQ dshConn Prov.q1''
-            execQ dshConn Prov.q2
+            putStrLn "No provenance"
+            execQ dshConn NP.q1
+            execQ dshConn NP.q1'
+            execQ dshConn NP.q1''
+            execQ dshConn NP.q2
+
+            putStrLn "Built-in where-provenance"
+            execQ dshConn WP.q1
+            execQ dshConn WP.q1'
+            execQ dshConn WP.q1''
+            execQ dshConn WP.q2
+
+            putStrLn "Built-in where-provenance, polymorphic keys"
+            execQ dshConn PK.q1
+            execQ dshConn PK.q1'
+            execQ dshConn PK.q1''
+            execQ dshConn PK.q2
 
             disconnect c
         _     -> do
-            putStrLn "Prov.q1"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar Prov.q1)
+            putStrLn "WP.q1"
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar WP.q1)
                   debugFunctions

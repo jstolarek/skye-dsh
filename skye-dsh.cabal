@@ -17,6 +17,7 @@ executable skye-dsh
                        HDBC,
                        HDBC-odbc,
                        data-default,
+                       text,
 
                        -- JSTOLAREK: temporary dependencies for prototyping
                        containers

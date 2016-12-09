@@ -3,7 +3,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns         #-}
-module Schema.PPDP2016Tours where
+module Schema.PPDP2016.Tours.NoProv where
 
 import          Database.DSH
 import          Data.List.NonEmpty
