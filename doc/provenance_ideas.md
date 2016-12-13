@@ -205,13 +205,48 @@ base.  Below is a rough list of open questions:
     out to be similar.
 
 
+A separate type to represent provenance annotations internally
+--------------------------------------------------------------
+
+Quote from the paper: _"The type system should capture the special nature of
+provenance meta-data."_
+
+With the current implementation the interface exposed to the user is explicit
+about provenance annotations and the user has to explicitly project data and
+provenance components.  I also briefly explored the idea of having a separate
+type to represent provenance in DSH's internal type system.  The primary
+motivation was the implementation of function that discards provenance
+annotations at the type level:
+
+```haskell
+discardWhereProvType :: Type -> Type
+discardWhereProvType (TupleT [ ScalarT t
+                             , TupleT [ ScalarT BoolT
+                                      , TupleT [ ScalarT StringT
+                                               , ScalarT StringT
+                                               , _ ]]]) = ScalarT t
+discardWhereProvType (ScalarT t) = ScalarT t
+discardWhereProvType (ListT   t) = ListT (discardWhereProvType t)
+discardWhereProvType (TupleT  t) = TupleT $ map discardWhereProvType t
+```
+
+This function is used when performing the where-provenance transformation.  The
+first pattern-match is intended and is simply horrible.  The idea was that
+having a separate type that captures provenance explicitly will make things
+easier.
+
+After a quick prototype implementation this turns out not to be easy.  With the
+current implementation type- and term-level encodings go hand in hand.
+Introducing explicit representation of provenance at the type level breaks
+things horribly, because at the term level everything is still encoded using
+tuples and there seems to be no easy way to make things go hand in hand again.
+It seems that to get this right I would need to be explicit about provenance in
+the internal expression language as well.  This cost of extra complexity in the
+internal language seems to outweight the benefits, so I've given up on the idea.
+
+
 Some open questions and loose thoughts
 --------------------------------------
-
-  * Should I somehow add provenance to internal type language?  (Quote from
-    paper: _"The type system should capture the special nature of provenance
-    meta-data."_) Does the DSH's internal type system have any typing rules
-    written down somewhere?  I should probably ask Alex.
 
   * It should be possible to use DSH's internal type information to guide basic
     provenance transformations.  However, I doubt this approach will work for

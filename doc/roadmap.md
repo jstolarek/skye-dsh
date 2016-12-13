@@ -1,9 +1,6 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Add ProvenanceT as another possible type to definition of `Type` in
-    `Database.DSH.Common.Type`.  See two emails to James on (6/12/16).
-
   * **Benchmark DSH:** in the where-provenance paper there are some benchmarks.
     It would be nice to re-do them in DSH and perhaps compare them to Links.
     This is potentially time consuming, so a good idea would be start with some
