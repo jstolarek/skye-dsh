@@ -1,11 +1,7 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * Wydzielić osobny moduł Provenance.Where.TH z kodem generowanym TH, zrobić
-    porządek na listami eksportów tych modułów (tym razem na serio) no i napisać
-    ten cholerny kod w TH
-
-  * Update TH functions for generating boilerplate.
+  * zrobić porządek na listami eksportów tych modułów (tym razem na serio)
 
   * Add ProvenanceT as another possible type to definition of `Type` in
     `Database.DSH.Common.Type`.  See two emails to James on (6/12/16).
