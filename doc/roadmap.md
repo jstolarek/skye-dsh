@@ -1,13 +1,8 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
-  * zrobić porządek na listami eksportów tych modułów (tym razem na serio)
-
   * Add ProvenanceT as another possible type to definition of `Type` in
     `Database.DSH.Common.Type`.  See two emails to James on (6/12/16).
-
-  * Cleanup all the prototyping mess: hide abstractions and exports that were
-    exposed in DSH
 
   * **Benchmark DSH:** in the where-provenance paper there are some benchmarks.
     It would be nice to re-do them in DSH and perhaps compare them to Links.
