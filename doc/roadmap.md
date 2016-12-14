@@ -1,6 +1,23 @@
 Open questions, ideas, further steps and other TODOs
 ====================================================
 
+  * Figure out how to track lineage.  I think there are two challenges here.
+    Firstly, lineage is attached to whole rows rather than to a values within a
+    row.  Secondly, it needs to be propagated correcly and this might not be
+    trivial, especially in the presence of aggregation.
+
+  * At the moment where-provenance abstracts the key.  Can we abstract over the
+    whole where-provenance representation?  One idea would be to provide a
+    function that constructs provenance values based on some input, eg. table
+    name and the row itself.  This function would have to be called explicitly
+    in the rewritten query, I think.
+
+  * Implicit where-provenance transformation that DSH now performs under the
+    hood seems to be a special case of the view transformation problem,
+    ie. having a view that differs from the actual underlying table.  Can we
+    come up with a more general solution to this and only have where-provenance
+    transformation as an instance of that general approach?
+
   * **Benchmark DSH:** in the where-provenance paper there are some benchmarks.
     It would be nice to re-do them in DSH and perhaps compare them to Links.
     This is potentially time consuming, so a good idea would be start with some
