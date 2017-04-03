@@ -7,17 +7,41 @@
 module Queries.PPDP2016.Tours.Lineage where
 
 import           Database.DSH
+import           Database.DSH.Provenance
 
 import           Schema.PPDP2016.Tours.Lineage
 
+q0 :: Q [Lineage Text Integer]
+q0 = [ addLineage (a_nameQ a) (agencies_lineageQ al)
+     | al <- agenciesL
+     , let a = agencies_dataQ al ]
+
 -- | Query from Figure 1
-q1 :: Q [(Text, Text)]
-q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
-     | a  <- agencies
-     , et <- externalTours
-     , a_nameQ a  == et_nameQ et
-     , et_typeQ et == "boat"
+{-
+First step: lineage only requested from agencies table
+q1 :: Q [Lineage (Text, Text) Integer]
+q1 = [ addLineage (lineage_dataQ z_a) (lineage_provQ al `appendLineageQ` lineage_provQ z_a)
+     | al <- agenciesL
+     , let a = agencies_dataQ al
+     , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a))
+                    :: Q (Lineage (Text, Text) Integer)
+              | et <- externalTours
+              , a_nameQ a  == et_nameQ et
+              , et_typeQ et == "boat" ]
      ]
+-}
+
+q1 :: Q [Lineage (Text, Text) Integer]
+q1 = [ addLineage (lineage_dataQ z_a) (lineage_provQ al `appendLineageQ` lineage_provQ z_a)
+     | al <- agenciesL
+     , let a = agencies_dataQ al
+     , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a))
+                    :: Q (Lineage (Text, Text) Integer)
+              | et <- externalTours
+              , a_nameQ a  == et_nameQ et
+              , et_typeQ et == "boat" ]
+     ]
+
 
 {-
 -- | Alternative version of q1 presented in Section 2.2 of the paper
