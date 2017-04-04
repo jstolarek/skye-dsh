@@ -50,32 +50,16 @@ addLineage (Q row) (Q lineage) = Q (TupleConstE (Tuple2E row lineage))
 agenciesL :: Q [Lineage Agency Integer]
 agenciesL = [ add_lineage a "agencies" (a_idQ a) | a <- agencies ]
 
--- Generate these with TH.  Or perhaps introduce polymorphic selectors?
--- generateLineageSelectors ''Agency
-agencies_dataQ :: Q (Lineage Agency Integer) -> Q Agency
-agencies_dataQ (view -> (agency_, _)) = agency_
-
-agencies_lineageQ :: Q (Lineage Agency Integer) -> Q (LineageAnnot Integer)
-agencies_lineageQ (view -> (_, lineage)) = lineage
-
--- JSTOLAREK: these should have better names and be placed inside DSH
-lineage_dataQ :: (QA a, QA key) => Q (Lineage a key) -> Q a
-lineage_dataQ (view -> (a, _)) = a
-
-lineage_provQ :: (QA a, QA key) => Q (Lineage a key) -> Q (LineageAnnot key)
-lineage_provQ (view -> (_, lineage)) = lineage
-
-
 -- JSTOLAREK: generate these with TH.  Perhaps generate lineage selectors at the
 -- same time (see above)?
 a_idLQ :: Q (Lineage Agency Integer) -> Q Integer
-a_idLQ = a_idQ . agencies_dataQ
+a_idLQ = a_idQ . lineageDataQ
 a_nameLQ :: Q (Lineage Agency Integer) -> Q Text
-a_nameLQ = a_nameQ . agencies_dataQ
+a_nameLQ = a_nameQ . lineageDataQ
 a_based_inLQ :: Q (Lineage Agency Integer) -> Q Text
-a_based_inLQ = a_based_inQ . agencies_dataQ
+a_based_inLQ = a_based_inQ . lineageDataQ
 a_phoneLQ :: Q (Lineage Agency Integer) -> Q Text
-a_phoneLQ = a_phoneQ . agencies_dataQ
+a_phoneLQ = a_phoneQ . lineageDataQ
 
 agencies :: Q [Agency]
 agencies = table "agencies"

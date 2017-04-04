@@ -12,9 +12,9 @@ import           Database.DSH.Provenance
 import           Schema.PPDP2016.Tours.Lineage
 
 q0 :: Q [Lineage Text Integer]
-q0 = [ addLineage (a_nameQ a) (agencies_lineageQ al)
+q0 = [ addLineage (a_nameQ a) (lineageProvQ al)
      | al <- agenciesL
-     , let a = agencies_dataQ al ]
+     , let a = lineageDataQ al ]
 
 -- | Query from Figure 1
 {-
@@ -32,9 +32,9 @@ q1 = [ addLineage (lineage_dataQ z_a) (lineage_provQ al `appendLineageQ` lineage
 -}
 
 q1 :: Q [Lineage (Text, Text) Integer]
-q1 = [ addLineage (lineage_dataQ z_a) (lineage_provQ al `appendLineageQ` lineage_provQ z_a)
+q1 = [ addLineage (lineageDataQ z_a) (lineageProvQ al `appendLineageQ` lineageProvQ z_a)
      | al <- agenciesL
-     , let a = agencies_dataQ al
+     , let a = lineageDataQ al
      , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a))
                     :: Q (Lineage (Text, Text) Integer)
               | et <- externalTours
