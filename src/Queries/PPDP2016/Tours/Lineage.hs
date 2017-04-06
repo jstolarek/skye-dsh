@@ -18,16 +18,28 @@ q0 = [ addLineage (a_nameQ a) (lineageProvQ al)
 
 -- | Query from Figure 1
 {-
+Original query
+q1 :: Q [(Text, Text)]
+q1 = [ result
+     | a  <- agencies
+     , et <- externalTours
+     , a_nameQ a  == et_nameQ et
+     , et_typeQ et == "boat"
+     , let result = tup2 (et_nameQ et) (a_phoneQ a)
+     ]
+-}
+
+{-
 First step: lineage only requested from agencies table
 q1 :: Q [Lineage (Text, Text) Integer]
-q1 = [ addLineage (lineage_dataQ z_a) (lineage_provQ al `appendLineageQ` lineage_provQ z_a)
+q1 = [ addLineage (lineageDataQ z_a) (lineageProvQ al `appendLineageQ` lineageProvQ z_a)
      | al <- agenciesL
-     , let a = agencies_dataQ al
-     , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a))
-                    :: Q (Lineage (Text, Text) Integer)
+     , let a = lineageDataQ al
+     , z_a <- [ emptyLineageQ result :: Q (Lineage (Text, Text) Integer)
               | et <- externalTours
               , a_nameQ a  == et_nameQ et
-              , et_typeQ et == "boat" ]
+              , et_typeQ et == "boat"
+              , let result = tup2 (et_nameQ et) (a_phoneQ a) ]
      ]
 -}
 
@@ -35,11 +47,11 @@ q1 :: Q [Lineage (Text, Text) Integer]
 q1 = [ addLineage (lineageDataQ z_a) (lineageProvQ al `appendLineageQ` lineageProvQ z_a)
      | al <- agenciesL
      , let a = lineageDataQ al
-     , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a))
-                    :: Q (Lineage (Text, Text) Integer)
+     , z_a <- [ emptyLineageQ result :: Q (Lineage (Text, Text) Integer)
               | et <- externalTours
               , a_nameQ a  == et_nameQ et
-              , et_typeQ et == "boat" ]
+              , et_typeQ et == "boat"
+              , let result = tup2 (et_nameQ et) (a_phoneQ a) ]
      ]
 
 
