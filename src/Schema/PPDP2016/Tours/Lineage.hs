@@ -31,36 +31,6 @@ deriveDSH              ''Agency
 deriveTA               ''Agency
 generateTableSelectors ''Agency
 
--- PROTOTYPING BY HAND
-
--- some form of this function should probably be placed in the library
-add_lineage :: (Reify (Rep a), Reify (Rep key))
-            => Q a -> Text -> Q key -> Q (Lineage a key)
-add_lineage (Q row) table_name (Q key) =
-    Q (TupleConstE (Tuple2E row (ListE (S.singleton
-       (TupleConstE (Tuple2E (TextE table_name) key))))))
-
--- another idea for this function
--- perhaps just lineageQ - a smart Q constructor?
-addLineage :: (Reify (Rep a), Reify (Rep key))
-           => Q a -> Q (LineageAnnot key) -> Q (Lineage a key)
-addLineage (Q row) (Q lineage) = Q (TupleConstE (Tuple2E row lineage))
-
--- "Agencies" table with lineage transformation performed by hand
-agenciesL :: Q [Lineage Agency Integer]
-agenciesL = [ add_lineage a "agencies" (a_idQ a) | a <- agencies ]
-
--- JSTOLAREK: generate these with TH.  Perhaps generate lineage selectors at the
--- same time (see above)?
-a_idLQ :: Q (Lineage Agency Integer) -> Q Integer
-a_idLQ = a_idQ . lineageDataQ
-a_nameLQ :: Q (Lineage Agency Integer) -> Q Text
-a_nameLQ = a_nameQ . lineageDataQ
-a_based_inLQ :: Q (Lineage Agency Integer) -> Q Text
-a_based_inLQ = a_based_inQ . lineageDataQ
-a_phoneLQ :: Q (Lineage Agency Integer) -> Q Text
-a_phoneLQ = a_phoneQ . lineageDataQ
-
 agencies :: Q [Agency]
 agencies = table "agencies"
                  ( "a_id" :|
@@ -69,6 +39,30 @@ agencies = table "agencies"
                  , "a_phone"
                  ])
                  (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
+
+-- PROTOTYPING BY HAND
+
+-- | Extend a given table with lineage tracking
+lineageTable :: (TA a, QA a, QA key)
+             => Text -> Q [a] -> (Q a -> Q key) -> Q [Lineage a key]
+lineageTable name tbl key =
+    [ lineageQ a (lineageAnnotQ name (key a)) | a <- tbl ]
+
+-- "Agencies" table with lineage transfsormation performed by hand
+agenciesL :: Q [Lineage Agency Integer]
+agenciesL = lineageTable "agencies" agencies a_idQ
+
+-- JSTOLAREK: generate these with TH.
+{-
+a_idLQ :: Q (Lineage Agency Integer) -> Q Integer
+a_idLQ = a_idQ . lineageDataQ
+a_nameLQ :: Q (Lineage Agency Integer) -> Q Text
+a_nameLQ = a_nameQ . lineageDataQ
+a_based_inLQ :: Q (Lineage Agency Integer) -> Q Text
+a_based_inLQ = a_based_inQ . lineageDataQ
+a_phoneLQ :: Q (Lineage Agency Integer) -> Q Text
+a_phoneLQ = a_phoneQ . lineageDataQ
+-}
 
 data ExternalTour = ExternalTour
     { et_id          :: Integer
@@ -91,3 +85,6 @@ externalTours = table "externaltours"
                       , "et_price"
                       ])
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty NoProvenance)
+
+externalToursL :: Q [Lineage ExternalTour Integer]
+externalToursL = lineageTable "externalTours" externalTours et_idQ
