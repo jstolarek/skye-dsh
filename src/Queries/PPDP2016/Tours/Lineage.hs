@@ -26,44 +26,54 @@ q0 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProv
      ]
 
 -- | Query from Figure 1
+q1OutsideIn :: Q [Lineage (Text, Text) Integer]
+q1OutsideIn = [ lineageQ (lineageDataQ z_a)
+                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
+              | al <- agenciesL
+              , let a = lineageDataQ al
+              , z_a <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
+                             Q (Lineage (Text, Text) Integer)
+                       | et <- externalTours
+                       , a_nameQ a  == et_nameQ et
+                       , et_typeQ et == "boat" ]
+              ]
+
 {-
 Original query with transformed result
 q1 :: Q [(Text, Text)]
-q1 = [ result
+q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
      | a  <- agencies
      , et <- externalTours
      , a_nameQ a  == et_nameQ et
      , et_typeQ et == "boat"
-     , let result = tup2 (et_nameQ et) (a_phoneQ a)
      ]
 -}
 
-{-
-First step: lineage only requested from agencies table
-q1 :: Q [Lineage (Text, Text) Integer]
-q1 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-     | al <- agenciesL
-     , let a = lineageDataQ al
-     , z_a <- [ emptyLineageQ result :: Q (Lineage (Text, Text) Integer)
-              | et <- externalTours
-              , a_nameQ a  == et_nameQ et
-              , et_typeQ et == "boat"
-              , let result = tup2 (et_nameQ et) (a_phoneQ a) ]
-     ]
--}
+q1InsideOut :: Q [Lineage (Text, Text) Integer]
+q1InsideOut = [ lineageQ (lineageDataQ z_et)
+                         (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
+              | a  <- agencies
+              , etl <- externalToursL
+              , let et = lineageDataQ etl
+              , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
+                              Q (Lineage (Text, Text) Integer)
+                        | a_nameQ a  == et_nameQ et
+                        , et_typeQ et == "boat" ]
+              ]
 
 q1 :: Q [Lineage (Text, Text) Integer]
-q1 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
+q1 = [ lineageQ (lineageDataQ z_a)
+                (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
      | al <- agenciesL
      , let a = lineageDataQ al
      , z_a <- [ lineageQ (lineageDataQ z_et)
                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
               | etl <- externalToursL
               , let et = lineageDataQ etl
-              , z_et <- [ emptyLineageQ result :: Q (Lineage (Text, Text) Integer)
+              , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
+                              Q (Lineage (Text, Text) Integer)
                         | a_nameQ a  == et_nameQ et
-                        , et_typeQ et == "boat"
-                        , let result  = tup2 (et_nameQ et) (a_phoneQ a) ]
+                        , et_typeQ et == "boat" ]
               ]
      ]
 
