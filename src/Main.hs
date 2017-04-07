@@ -67,6 +67,6 @@ main = do
 
             disconnect c
         _     -> do
-            putStrLn "L.q0"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q0)
+            putStrLn "L.q1"
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q1)
                   debugFunctions

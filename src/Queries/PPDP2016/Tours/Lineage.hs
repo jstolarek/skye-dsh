@@ -11,6 +11,7 @@ import           Database.DSH.Provenance
 
 import           Schema.PPDP2016.Tours.Lineage
 
+{-
 q0' :: Q [Text]
 q0' = [ a_nameQ a
       | a <- agencies
@@ -38,7 +39,6 @@ q1OutsideIn = [ lineageQ (lineageDataQ z_a)
                        , et_typeQ et == "boat" ]
               ]
 
-{-
 Original query with transformed result
 q1 :: Q [(Text, Text)]
 q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
@@ -47,7 +47,6 @@ q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
      , a_nameQ a  == et_nameQ et
      , et_typeQ et == "boat"
      ]
--}
 
 q1InsideOut :: Q [Lineage (Text, Text) Integer]
 q1InsideOut = [ lineageQ (lineageDataQ z_et)
@@ -60,15 +59,16 @@ q1InsideOut = [ lineageQ (lineageDataQ z_et)
                         | a_nameQ a  == et_nameQ et
                         , et_typeQ et == "boat" ]
               ]
+-}
 
 q1 :: Q [Lineage (Text, Text) Integer]
 q1 = [ lineageQ (lineageDataQ z_a)
                 (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-     | al <- agenciesL
+     | al <- agencies
      , let a = lineageDataQ al
      , z_a <- [ lineageQ (lineageDataQ z_et)
                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
-              | etl <- externalToursL
+              | etl <- externalTours
               , let et = lineageDataQ etl
               , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
                               Q (Lineage (Text, Text) Integer)
