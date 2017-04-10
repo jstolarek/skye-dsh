@@ -27,17 +27,16 @@ deriveDSH              ''Agency
 deriveTA               ''Agency
 generateTableSelectors ''Agency
 
-agencies :: Q [Lineage Agency Integer]
+agencies :: Q [Agency]
 agencies = table "agencies"
                  ( "a_id" :|
                  [ "a_name"
                  , "a_based_in"
                  , "a_phone"
                  ])
-                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
+                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty NoProvenance)
 
 -- PROTOTYPING BY HAND
-{-
 -- | Extend a given table with lineage tracking
 lineageTable :: (TA a, QA a, QA key)
              => Text -> Q [a] -> (Q a -> Q key) -> Q [Lineage a key]
@@ -47,6 +46,7 @@ lineageTable name tbl key =
 -- "Agencies" table with lineage transfsormation performed by hand
 agenciesL :: Q [Lineage Agency Integer]
 agenciesL = lineageTable "agencies" agencies a_idQ
+{-
 -}
 -- JSTOLAREK: generate these with TH.
 {-
@@ -72,7 +72,7 @@ deriveDSH              ''ExternalTour
 deriveTA               ''ExternalTour
 generateTableSelectors ''ExternalTour
 
-externalTours :: Q [Lineage ExternalTour Integer]
+externalTours :: Q [ExternalTour]
 externalTours = table "externaltours"
                       ( "et_id" :|
                       [ "et_name"
@@ -80,8 +80,8 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
-                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty LineageHint)
-{-
+                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty NoProvenance)
 externalToursL :: Q [Lineage ExternalTour Integer]
 externalToursL = lineageTable "externalTours" externalTours et_idQ
+{-
 -}
