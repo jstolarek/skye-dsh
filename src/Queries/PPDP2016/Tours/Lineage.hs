@@ -64,11 +64,11 @@ q1InsideOut = [ lineageQ (lineageDataQ z_et)
 q1 :: Q [Lineage (Text, Text) Integer]
 q1 = [ lineageQ (lineageDataQ z_a)
                 (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-     | al <- agenciesL
+     | al <- agencies
      , let a = lineageDataQ al
      , z_a <- [ lineageQ (lineageDataQ z_et)
                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
-              | etl <- externalToursL
+              | etl <- externalTours
               , let et = lineageDataQ etl
               , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
                               Q (Lineage (Text, Text) Integer)
