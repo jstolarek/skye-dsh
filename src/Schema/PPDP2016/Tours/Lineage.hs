@@ -4,12 +4,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns         #-}
 
--- JSTOLAREK: required for prototyping
-{-# LANGUAGE MonadComprehensions  #-}
-{-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE RebindableSyntax     #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE FlexibleContexts     #-}
 module Schema.PPDP2016.Tours.Lineage where
 
 import           Database.DSH
