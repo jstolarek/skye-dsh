@@ -11,11 +11,11 @@ import           Database.DSH.Provenance
 
 import           Schema.PPDP2016.Tours.Lineage
 
+--q1 :: Q [Lineage Text Integer]
+q1 = [ a_nameQ a
+     | a <- agencies
+     ]
 {-
-q0' :: Q [Text]
-q0' = [ a_nameQ a
-      | a <- agencies
-      ]
 
 LamE a (a_nameQ a)
 
@@ -74,7 +74,6 @@ q1InsideOut = [ lineageQ (lineageDataQ z_et)
                         | a_nameQ a  == et_nameQ et
                         , et_typeQ et == "boat" ]
               ]
--}
 
 q1 :: Q [Lineage (Text, Text) Integer]
 q1 = [ lineageQ (lineageDataQ z_a)
@@ -92,6 +91,7 @@ q1 = [ lineageQ (lineageDataQ z_a)
                         , true ]
               ]
      ]
+-}
 
 
 {-
