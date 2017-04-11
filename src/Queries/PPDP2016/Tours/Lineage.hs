@@ -17,14 +17,28 @@ q0' = [ a_nameQ a
       | a <- agencies
       ]
 
+LamE a (a_nameQ a)
+
+singleGenComp (a_nameQ a) a agencies
+
 q0 :: Q [Lineage Text Integer]
 q0 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
      | al <- agencies
-     , a <- [ lineageDataQ al | true ]
+     , let a = lineageDataQ al
      , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer)
               | true
               ]
      ]
+
+singleGenComp (
+   let a (lineageDataQ al) (
+         singleGenComp (lineageQ (lineageDataQ z_a)
+                                 (lineageProvQ al `lineageAppendQ` lineageProvQ z_a))
+                       z_a
+                       (Comp (emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer))
+                             (Guard true))))
+   al
+   agencies
 
 
 -- | Query from Figure 1
@@ -66,11 +80,11 @@ q1 :: Q [Lineage (Text, Text) Integer]
 q1 = [ lineageQ (lineageDataQ z_a)
                 (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
      | al <- agencies
-     , a <- [ lineageDataQ al | true ]
+     , let a = lineageDataQ al
      , z_a <- [ lineageQ (lineageDataQ z_et)
                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
               | etl <- externalTours
-              , et <- [ lineageDataQ etl | true ]
+              , let et = lineageDataQ etl
               , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
                               Q (Lineage (Text, Text) Integer)
                         | a_nameQ a  == et_nameQ et
