@@ -8,27 +8,28 @@ module Queries.PPDP2016.Tours.Lineage where
 
 import           Database.DSH
 import           Database.DSH.Provenance
+import           Database.DSH.Translate.Lineage
 
 import           Schema.PPDP2016.Tours.Lineage
 
---q1 :: Q [Lineage Text Integer]
-q1 = [ a_nameQ a
-     | a <- agencies
-     ]
-{-
-
-LamE a (a_nameQ a)
-
-singleGenComp (a_nameQ a) a agencies
-
 q0 :: Q [Lineage Text Integer]
 q0 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-     | al <- agencies
+     | al <- lineage agencies
      , let a = lineageDataQ al
      , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer)
               | true
               ]
      ]
+
+--q1 :: Q [Lineage Text Integer]
+{-
+q1 = [ a_nameQ a
+     | a <- agencies
+     ]
+
+LamE a (a_nameQ a)
+
+singleGenComp (a_nameQ a) a agencies
 
 singleGenComp (
    let a (lineageDataQ al) (

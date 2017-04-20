@@ -63,10 +63,10 @@ main = do
             execQ dshConn PK.q2
 
             putStrLn "Lineage"
-            execQ dshConn L.q1
+            execQ dshConn L.q0
 
             disconnect c
         _     -> do
             putStrLn "L.q1"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q1)
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar WP.q1)
                   debugFunctions
