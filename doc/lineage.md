@@ -42,6 +42,18 @@ Create a TH function to generate boilerplate needed to work with lineage:
 deriveLineage ''Agency
 ```
 
+Failed ideas and dead ends
+--------------------------
+
+Not possible to perform transformation when translating from frontend to CL.
+Reason: desugared syntax tree must be a well-typed Haskell expression after
+desugaring.
+
+Type class RowKey required to construct well-typed key column projections.
+
+Proxies required to guide type inference.
+
+
 Questions
 ---------
 

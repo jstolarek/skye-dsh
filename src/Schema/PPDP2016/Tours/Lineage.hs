@@ -13,7 +13,6 @@ import           Data.List.NonEmpty
 
 import           Database.DSH.Frontend.Internals
 
-
 data Agency = Agency
     { a_id       :: Integer
     , a_name     :: Text
@@ -34,8 +33,8 @@ agencies = table "agencies"
                  ])
                  (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
 
-instance RowKey (Integer, Text, Text, Text) Integer where
-    rowKey ( a) = (AppE (TupElem Tup4_1) a)
+instance RowKey Agency where
+    rowKey _ a = AppE (TupElem Tup4_1) a
 
 data ExternalTour = ExternalTour
     { et_id          :: Integer
@@ -49,7 +48,7 @@ deriveDSH              ''ExternalTour
 deriveTA               ''ExternalTour
 generateTableSelectors ''ExternalTour
 
-externalTours :: Q [Lineage ExternalTour Integer]
+externalTours :: Q [ExternalTour]
 externalTours = table "externaltours"
                       ( "et_id" :|
                       [ "et_name"
@@ -58,3 +57,6 @@ externalTours = table "externaltours"
                       , "et_price"
                       ])
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty LineageHint)
+
+instance RowKey ExternalTour where
+    rowKey _ a = AppE (TupElem Tup5_1) a
