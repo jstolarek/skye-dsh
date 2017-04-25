@@ -2,7 +2,12 @@ Lineage design ideas
 ====================
 
 Lineage is attached to all rows of a table and then accumulated if result is
-constructed using data from several tables.
+constructed using data from several tables.  If the result contains nested lists
+then lineage is also nested - each collection in the result has a separate
+lineage.
+
+**DISCLAIMER**: Whenever code is presented in this document it may be
+prettyfied, eg. by removing type-class constraints.
 
 
 Lineage data types and primitives
@@ -54,9 +59,9 @@ lineageTable name tbl key =
     [ lineageQ a (lineageAnnotQ name (key a)) | a <- tbl ]
 ```
 
-These primitives show are here primarily to demonstrate the concepts behind
-lineage transformation.  They are not actually used to perform the
-transformation for reasons explained later.
+These primitives are here primarily to demonstrate the concepts behind lineage
+transformation.  They are not actually used to perform the transformation for
+reasons explained later.
 
 
 Lineage transformation by example
@@ -110,8 +115,8 @@ q2' = [ lineageQ (lineageDataQ z_a)
 ```
 
 
-Failed attempt #1: relying on lineage hints
--------------------------------------------
+Failed attempt: relying on lineage hints
+----------------------------------------
 
 My inital idea was to add `LineageHint` hint to table declaration:
 
@@ -133,8 +138,8 @@ query using this table needs needs to be transformed to add lineage information.
 declaration.) The transformation would be performed during translation from
 frontend language to CL language.
 
-The reason this does not work is that desugared expression does not type check.
-Going back to an earlier example, we would have to modify its type:
+Going back to an earlier example, we would have to modify the type of `q1` to
+also include `Lineage`:
 
 ```haskell
 q1 :: Q [Lineage Text Integer]
@@ -143,18 +148,255 @@ q1 = [ a_nameQ a
      ]
 ```
 
-CONTINUE HERE
+The above query gets desugared into `concatMap (\a -> [a_nameQ a]) agencies`.
+The idea was for DSH to realize that `agencies` table has `LineageHint`
+annotation and rewrite the query.
 
-Failed ideas and dead ends
---------------------------
+The reason this does not work is that desugared expression does not type check.
+The problem is that `a` has type `Lineage Agency Integer`, whereas `a_nameQ`
+expects `Agency` as it's input.  One could consider projections that work under
+`Lineage`, eg.
 
-Not possible to perform transformation when translating from frontend to CL.
-Reason: desugared syntax tree must be a well-typed Haskell expression after
-desugaring.
+```haskell
+a_nameQ :: Lineage Agency Integer -> Lineage Text Integer
+```
 
-Type class RowKey required to construct well-typed key column projections.
+the idea being that projecting a column retains the lineage information.  This
+approach quickly breaks however.  Looking at the body of second example query
+`q2` we have `tup2 (et_nameQ et) (a_phoneQ a)`.  `tup2` constructor would
+somehow have to extract lineage from its arguments and combine it.  This means
+that `tup2` would have to work both for arguments with and without lineage
+annotation.
 
-Proxies required to guide type inference.
+**Take-away message**: desugared expression must type-check since it is embedded
+in Haskell's type system.  It is not possible to rewrite it later to a form that
+would type check.
+
+
+Ongoing work: Frontend-to-Frontend transformation
+-------------------------------------------------
+
+Another idea is to write a user-space function that will take a well-typed query
+and transform it into a query with lineage.  Usage would look like this:
+
+```haskell
+q1' :: Q [Lineage Text Integer]
+q1' = lineage [ a_nameQ a | a <- agencies ]
+```
+
+Type of `lineage` would be:
+
+```haskell
+lineage :: Q [a] -> Q [Lineage a key]
+```
+
+Recall that `Q a` is a newtype corresponding to `Exp (Rep a)`.  (More on `Rep`
+in a moment.)  This means that `lineage` would have to work by directly
+constructing a syntax tree of `Exp`.  This approach seems sound but I have
+encountered a lot of problems with implementing it.  Below are some of them:
+
+1. Rewriting a table expression (`TableE`) requires performing a transformation
+   that is equivalent to:
+
+   ```haskell
+   lineageTable :: Text -> Q [a] -> (Q a -> Q key) -> Q [Lineage a key]
+   lineageTable name tbl key =
+       [ lineageQ a (lineageAnnotQ name (key a)) | a <- tbl ]
+   ```
+
+   The difficult part of the transformation is projecting the key column.
+   `TableE` expression stores information about the number of columns and a key
+   column (I'm ignoring compound keys for the sake of simplicity).  This allows
+   to easily figure out what the projection should be. For `agencies` table the
+   expression projecting the key column would be `AppE (TupElem Tup4_1) a` where
+   `Tup4_1` represents a function projecting first component of a 4-tuple and
+   `a` is a variable that represents a table row.  This however does not
+   type-check.  The reason is that `Exp` is a GADT with a type index enforcing
+   correct typing of expressions.  We have the following types:
+
+   ```haskell
+   TupElem Tup4_1 :: Fun (a,b,c,d) a
+   AppE :: Fun a b -> Exp a -> Exp b
+   ```
+
+   `AppE (TupElem Tup4_1)` has type `Exp (a,b,c,d) -> Exp a` and so `a` would
+   have to have a type `(a, b, c, d)` for everything to type check.
+   Unfortunatelly, the type of `TableE` expression is `Exp [a]` - it is a list
+   of things with an unknown intrnal structure.  In order for this code to
+   typecheck we would have to make a connection between the number of columns,
+   which is a run-time information, and the arrity of tuples representing a
+   table row, which is compile-time information.
+
+
+2. An important observation related to the above problem is that we can easily
+   construct column projections in the source language but not in the desugared
+   frontend language.  The reason why everything works in the surface language
+   is the existance of `View` type class and its interaction with `Rep`
+   associated type family.  Here are the definitions of `View` and `Rep`:
+
+   ```haskell
+   class View a where
+      type ToView a
+      view :: a -> ToView a
+
+   class QA a where
+      type Rep a
+   ```
+
+   Instances for `Agency` look like this:
+
+   ```haskell
+   instance QA Agency where
+      type Rep Agency = (Integer, Text, Text, Text)
+
+   instance View (Q Agency) where
+     type ToView (Q Agency) = (Q Integer, Q Text, Q Text, Q Text)
+     view (Q agency)
+       = ((Q $ (AppE (TupElem Tup4_1) agency)),
+          (Q $ (AppE (TupElem Tup4_2) agency)),
+          (Q $ (AppE (TupElem Tup4_3) agency)),
+          (Q $ (AppE (TupElem Tup4_4) agency)))
+
+   a_nameQ :: Q Agency -> Q Text
+   a_nameQ (view -> (_, name, _, _)) = name
+   ```
+
+   Note that `Q Agency` really means `Exp (Rep Agency)` - an expression that
+   represents a 4-tuple.  This connection makes everything work in the surface
+   language.
+
+   Based on this observation, I decided to solve the problem outlined in (1) by
+   introducing a type class that will contain a function for projecting the key
+   column.  A speculative definition might look like this:
+
+   ```haskell
+   class RowKey a where
+      rowKey :: Q a -> Q Integer
+   ```
+
+   (**IMPORTANT**: Note that previously I have assumed polymorphic keys in the
+   representation of `Lineage`.  At this point I am abandoning the idea and
+   specializing keys to be of `Integer` type.  The reason is that key
+   polymorphism brings in more problems and I want to solve more important
+   problems first.)
+
+
+3. Another problem we now face is: should our function operate on `Q` or on
+   `Exp`?  All the surface functions operate on `Q`.  So does `rowKey` function
+   of `RowKey` type class, the intention being that `Agency` data type would be
+   an instance of `RowKey`.
+
+   Recall that `lineage` function has the type `Q [a] -> Q [Lineage a Integer]`
+   - it operates on `Q`.  But `Q` is only a newtype.  The actual underlying data
+   type is `Exp` and so `lineage` has to traverse a syntax tree of type `Exp`.
+   Importantly, subtrees in that syntax tree are also of type `Exp` so `lineage`
+   needs a worker that works on `Exp`.  But what should the return type of that
+   worker be?  List expressions should be extended with lineage, but other
+   expressions (eg. constants) should remain unchanged.  Therefore, I propose:
+
+   ```haskell
+   type family LineageRep a where
+       LineageRep [a] = [(a, [(Text, Integer)])] -- representation of lineage
+       LineageRep a   = a
+
+   lineageWorker :: Exp a -> Exp (LineageRep a)
+   ```
+
+   Using a type family allows to have a single function for processing all
+   expressions.  An important aside is that with this approach it would not be
+   possible to work on `Q`.  Assume we have:
+
+   ```haskell
+   lineageWorker :: Q a -> Q (LineageRep a)
+   lineageWorker (Q UnitE) = Q UnitE
+   ```
+
+   On the LHS we have `UnitE :: Exp ()`, and since the input argument is really
+   of type `Exp (Rep a)` we learn that `Rep a ~ ()`.  By similar reasoning on
+   the RHS we have to prove that `(Rep (LineageRep a) ~ ())`.  But this cannot
+   be deduced from the LHS since `Rep` is not injective.  So the code working on
+   `Q` would not type check.  Or at least it would require some more type-level
+   hackery to make this work.
+
+   So having `rowKey :: Q a -> Q Integer` is not very usefull if we need to work
+   on `Exp`.  Another attempt would be:
+
+   ```haskell
+   class RowKey a where
+      rowKey :: Exp a -> Exp Integer
+   ```
+
+   This works well inside `lineageWorker`, but now the problem is instances
+   would have to be written on representations of surface data types, eg. we
+   would have to write `instance RowKey (Integer, Text, Text, Text) where...`
+   instead of `instance RowKey Agency where...`.  This is not acceptable - two
+   data types might have identical internal representations but different ways
+   of projecting a key.  So another attempt would be:
+
+   ```haskell
+   class QA a => RowKey a where
+      rowKey :: Exp (Rep a) -> Exp Integer
+   ```
+
+   The intention here being that instances are written on surface data types but
+   the function itself works on internal representations of surface data types.
+   This is what we really want, but now we have a different problem: type of
+   `rowKey` is ambiguous because type variable `a` appears only under
+   (non-injective) type family.  Solution to this problem is closely related to
+   problem (5).
+
+
+5. Transforming `TableE` with `lineageWorker` now relies on `rowKey` function,
+   which means data type that represents a table row must be an instance of
+   `RowKey`.  This means we need a type class constraint.  But it only makes
+   sense to have that constraint when dealing with `TableE`.  The solution is to
+   add a type class constraint to `TableE` constructor:
+
+   ```haskell
+   TableE :: (RowKey a) => Table -> Exp (Rep [a])
+   ```
+
+   The intention here is that `a` stands for a surface data type.  We require
+   that this data type is an instance of `RowKey` and index the `Exp`
+   constructor with `Rep [a]` - a representation of list containing surface data
+   type `a`.  But here we also face the same problem as with the updated
+   definition of `rowKey`: type variable `a` is ambiguous because it appears
+   only under a type family and inside a context.  The solution in both cases is
+   to introduced a type proxy:
+
+   ```haskell
+   TableE :: (RowKey a) => Proxy a -> Table -> Exp (Rep [a])
+
+   class QA a => RowKey a where
+      rowKey :: Proxy a -> Exp (Rep a) -> Exp Integer
+   ```
+
+   Proxies can now be used to guide type inference in `lineageWorker`
+
+   ```haskell
+   lineageWorker t@(TableE proxyA (TableDB name _ _)) = do
+     let lam :: forall b. (QA b, RowKey b)
+             => Proxy b -> Integer -> Exp [(Rep b, [(Text, Integer)])]
+         lam proxyB a = ListE (S.singleton (TupleConstE (Tuple2E (VarE a)
+                         (ListE (S.singleton (TupleConstE (Tuple2E
+                           (TextE (pack name)) (rowKey proxyB (VarE a)))))))))
+     return (AppE ConcatMap (TupleConstE (Tuple2E (LamE (lam proxyA)) t)))
+   ```
+
+
+TODOs
+-----
+
+  * work out details of lineage transformation for `ConcatMap` using pen &
+    paper.
+
+  * it might be worth documenting how lambdas are handled.
+
+  * problems with constructing applications are probably worth documenting but I
+    should probably understand more about them first
+
+  * perhaps it would be possible to somehow call helpers available in the
+    surface language?  See `toLam` in `Internals` module.
 
 
 Questions
@@ -162,11 +404,13 @@ Questions
 
   1. Do all collections in a query need to have Lineage attached?  What happens
      if one table is annotated with provenance but the other is not?  I think
-     this should be supported and is a useful feature.
+     supporting this would be a useful feature.
 
 
 Case studies
 ------------
+
+Lineage transformation of a hard-coded list:
 
 ```
 L[| for (x <- [1,2]) [x]) |]
@@ -182,8 +426,15 @@ for (y <- L[| [1,2] |])
 for (y <- [(data: 1, prov: []), (data: 2, prov: [])])
     for (z <- [(data: y.data, prov: [])])
        [( data = z.data, prov = y.prov ++ z.prov )]
+```
 
+Example from "Lineage-integrated Provenance" paper.  Interestingly, the result
+is different than the one obntained in the paper.  I believe that both results
+(ie. mine and the one in the paper) are semantically equivalent, but
+syntactically they are different.  Either I have misunderstood rules of the
+transformation or the paper presents a prettyfied result.
 
+```
 -- original query
 L[| for ( a <- agencies )
       for (e <- externalTours)
@@ -242,14 +493,3 @@ for ( y_a <- L[| agencies |] )
                      [( data = z_e.data, prov = y_e.prov ++ z_e.prov )] )
     [( data = z_a.data, prov = y_a.prov ++ z_a.prov )]
 ```
-
-
------------------------------------
-
--- perform [ a -> y_a.data ] substitution
-for ( y_a <- L[| agencies |] )
-  for ( z_a <- for (e <- externalTours)
-                   where (y_a.data.name == e.name && e.type == "boat")
-                     [ data : ( name = y_e.data.name, phone = y_a.data.phone )
-                     , prov : []] )
-    [( data = z_a.data, prov = y_a.prov ++ z_a.prov )]
