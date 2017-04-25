@@ -27,6 +27,19 @@ q1 = [ a_nameQ a
      | a <- agencies
      ]
 
+ConcatMap (\a -> a_nameQ a) (agencies)
+
+ConcatMap
+  (\al ->
+   (\a ->
+    ConcatMap (\z_a ->
+               lineageQ (lineageDataQ z_a)
+                        (lineageProvQ al `lineageAppendQ` lineageProvQ z_a))
+              (Cond true [emptyLineageQ (a_nameQ a)] []))
+   (lineageDataQ al))
+  (ConcatMap (\a -> [(a, [(name, rowKey a)])]) agencies)
+
+
 LamE a (a_nameQ a)
 
 singleGenComp (a_nameQ a) a agencies
