@@ -60,8 +60,8 @@ lineageTable name tbl key =
 ```
 
 These primitives are here primarily to demonstrate the concepts behind lineage
-transformation.  They are not actually used to perform the transformation for
-reasons explained later.
+transformation.  They are not actually used to perform the transformation
+internally inside the library.
 
 
 Lineage transformation by example
@@ -343,10 +343,10 @@ encountered a lot of problems with implementing it.  Below are some of them:
    This is what we really want, but now we have a different problem: type of
    `rowKey` is ambiguous because type variable `a` appears only under
    (non-injective) type family.  Solution to this problem is closely related to
-   problem (5).
+   problem (4).
 
 
-5. Transforming `TableE` with `lineageWorker` now relies on `rowKey` function,
+4. Transforming `TableE` with `lineageWorker` now relies on `rowKey` function,
    which means data type that represents a table row must be an instance of
    `RowKey`.  This means we need a type class constraint.  But it only makes
    sense to have that constraint when dealing with `TableE`.  The solution is to
