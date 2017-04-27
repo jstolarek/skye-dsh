@@ -87,11 +87,9 @@ q1 = [ a_nameQ a
 q1' :: Q [Lineage Text Integer]
 q1' = [ lineageQ (lineageDataQ z_a)
                  (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-      | al <- agenciesL
-      , let a = lineageDataQ al
-      , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer)
-               | true
-               ]
+      | al  <- agenciesL
+      , a   <- [ lineageDataQ al ]
+      , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer) ]
       ]
 ```
 
@@ -105,12 +103,12 @@ Desugaring of `q1'`:
 
 ```haskell
 concatMap (\al ->
-  (\a ->
+  concatMap (\a ->
     concatMap (\z_a ->
                [ lineageQ (lineageDataQ z_a)
                           (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
-    (cond true [emptyLineageQ (a_nameQ a)] []))
-  (lineageDataQ al))
+               [emptyLineageQ (a_nameQ a)])
+  [lineageDataQ al])
 (concatMap (\a -> [(a, [(name, rowKey a)])]) agencies) -- agenciesL
 ```
 
@@ -128,17 +126,16 @@ q2 = [ tup2 (et_nameQ et) (a_phoneQ a)
 q2' :: Q [Lineage (Text, Text) Integer]
 q2' = [ lineageQ (lineageDataQ z_a)
                  (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-      | al <- agenciesL
-      , let a = lineageDataQ al
+      | al  <- agenciesL
+      , a   <- [ lineageDataQ al ]
       , z_a <- [ lineageQ (lineageDataQ z_et)
                           (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
                | etl <- externalTours
-               , let et = lineageDataQ etl
+               , et <- [ lineageDataQ etl ]
                , z_et <- [ emptyLineageQ (tup2 (et_nameQ et) (a_phoneQ a)) ::
                                Q (Lineage (Text, Text) Integer)
                          | a_nameQ a  == et_nameQ et
-                         , et_typeQ et == "boat"
-                         , true ]
+                         , et_typeQ et == "boat" ]
                ]
       ]
 ```
@@ -161,25 +158,54 @@ Desugaring of `q2'`, step 1:
 
 ```haskell
 concatMap (\al ->
-  (\a -> concatMap (\z_a ->
+  concatMap (\a -> concatMap (\z_a ->
              [ lineageQ (lineageDataQ z_a)
                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
          ( NESTED COMPREHENSION ))
-  (lineageDataQ al))
+  [ lineageDataQ al ])
 egenciesL
 ```
-
-# CONTINUE HERE
 
 Desugaring of `q2'`, step 2:
 
 ```haskell
 concatMap (\al ->
-  (\a -> concatMap (\z_a ->
-             [ lineageQ (lineageDataQ z_a)
-                        (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
-         ( NESTED COMPREHENSION ))
-  (lineageDataQ al))
+  concatMap (\a ->
+    concatMap (\z_a ->  -- (1)
+              [ lineageQ (lineageDataQ z_a)
+                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
+         (concatMap (\etl ->  -- second argument to (1)
+            concatMap (\et -> concatMap (\z_et ->
+                        [ lineageQ (lineageDataQ z_et)
+                                   (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et) ])
+                     ( NESTED COMPREHENSION ))
+            [ lineageDataQ etl ])
+         externalToursL))
+  [ lineageDataQ al ])
+egenciesL
+```
+
+Desugaring of `q2'`, final step:
+
+```haskell
+concatMap (\al ->
+  concatMap (\a ->
+    concatMap (\z_a ->  -- (1)
+              [ lineageQ (lineageDataQ z_a)
+                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
+         (concatMap (\etl ->  -- second argument to (1)
+            concatMap (\et -> concatMap (\z_et ->
+                        [ lineageQ (lineageDataQ z_et)
+                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
+                        ] )
+                    (if (a_nameQ a  == et_nameQ et)
+                     then (if et_typeQ et == "boat"
+                           then [tup2 (et_nameQ et) (a_phoneQ a)]
+                           else [])
+                     else []))
+            [lineageDataQ etl])
+         externalToursL))
+  [lineageDataQ al])
 egenciesL
 ```
 
