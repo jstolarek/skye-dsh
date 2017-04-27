@@ -64,11 +64,19 @@ transformation.  They are not actually used to perform the transformation
 internally inside the library.
 
 
-Lineage transformation by example
----------------------------------
+Lineage transformation by hand
+------------------------------
 
 Below are two example queries and their transformed versions with lineage
-tracking.
+tracking.  Both examples assume that the table `agenciesL` is a lineage-extended
+version of `agencies`:
+
+```haskell
+agenciesL :: Q [Lineage Agency Integer]
+agenciesL = [ lineageQ a (lineageAnnotQ "agencies" (a_idQ a)) | a <- agencies ]
+```
+
+### Example 1
 
 ```haskell
 q1 :: Q [Text]
@@ -79,13 +87,34 @@ q1 = [ a_nameQ a
 q1' :: Q [Lineage Text Integer]
 q1' = [ lineageQ (lineageDataQ z_a)
                  (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-      | al <- lineage agencies
+      | al <- agenciesL
       , let a = lineageDataQ al
       , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer)
                | true
                ]
       ]
 ```
+
+Desugaring of `q1`:
+
+```haskell
+concatMap (\a -> [a_nameQ a]) agencies
+```
+
+Desugaring of `q1'`:
+
+```haskell
+concatMap (\al ->
+  (\a ->
+    concatMap (\z_a ->
+               [ lineageQ (lineageDataQ z_a)
+                          (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
+    (cond true [emptyLineageQ (a_nameQ a)] []))
+  (lineageDataQ al))
+(concatMap (\a -> [(a, [(name, rowKey a)])]) agencies) -- agenciesL
+```
+
+### Example 2
 
 ```haskell
 q2 :: Q [(Text, Text)]
@@ -99,7 +128,7 @@ q2 = [ tup2 (et_nameQ et) (a_phoneQ a)
 q2' :: Q [Lineage (Text, Text) Integer]
 q2' = [ lineageQ (lineageDataQ z_a)
                  (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
-      | al <- agencies
+      | al <- agenciesL
       , let a = lineageDataQ al
       , z_a <- [ lineageQ (lineageDataQ z_et)
                           (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
@@ -112,6 +141,46 @@ q2' = [ lineageQ (lineageDataQ z_a)
                          , true ]
                ]
       ]
+```
+
+Desugaring of `q2`:
+
+```haskell
+concatMap (\a ->
+  concatMap (\et ->
+    if (a_nameQ a  == et_nameQ et)
+    then (if et_typeQ et == "boat"
+          then [tup2 (et_nameQ et) (a_phoneQ a)]
+          else [])
+    else [])
+  externalTours)
+agencies
+```
+
+Desugaring of `q2'`, step 1:
+
+```haskell
+concatMap (\al ->
+  (\a -> concatMap (\z_a ->
+             [ lineageQ (lineageDataQ z_a)
+                        (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
+         ( NESTED COMPREHENSION ))
+  (lineageDataQ al))
+egenciesL
+```
+
+# CONTINUE HERE
+
+Desugaring of `q2'`, step 2:
+
+```haskell
+concatMap (\al ->
+  (\a -> concatMap (\z_a ->
+             [ lineageQ (lineageDataQ z_a)
+                        (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
+         ( NESTED COMPREHENSION ))
+  (lineageDataQ al))
+egenciesL
 ```
 
 
