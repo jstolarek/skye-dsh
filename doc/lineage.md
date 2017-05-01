@@ -158,7 +158,8 @@ Desugaring of `q2'`, step 1:
 
 ```haskell
 concatMap (\al ->
-  concatMap (\a -> concatMap (\z_a ->
+  concatMap (\a ->
+    concatMap (\z_a ->
              [ lineageQ (lineageDataQ z_a)
                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
          ( NESTED COMPREHENSION ))
@@ -177,7 +178,8 @@ concatMap (\al ->
          (concatMap (\etl ->  -- second argument to (1)
             concatMap (\et -> concatMap (\z_et ->
                         [ lineageQ (lineageDataQ z_et)
-                                   (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et) ])
+                          (lineageProvQ etl `lineageAppendQ` lineageProvQ z_et)
+                        ] )
                      ( NESTED COMPREHENSION ))
             [ lineageDataQ etl ])
          externalToursL))
@@ -213,7 +215,7 @@ egenciesL
 Failed attempt: relying on lineage hints
 ----------------------------------------
 
-My inital idea was to add `LineageHint` hint to table declaration:
+My initial idea was to add `LineageHint` hint to table declaration:
 
 ```haskell
 agencies :: Q [Lineage Agency Integer]
@@ -316,17 +318,17 @@ encountered a lot of problems with implementing it.  Below are some of them:
 
    `AppE (TupElem Tup4_1)` has type `Exp (a,b,c,d) -> Exp a` and so `a` would
    have to have a type `(a, b, c, d)` for everything to type check.
-   Unfortunatelly, the type of `TableE` expression is `Exp [a]` - it is a list
-   of things with an unknown intrnal structure.  In order for this code to
+   Unfortunately, the type of `TableE` expression is `Exp [a]` - it is a list
+   of things with an unknown internal structure.  In order for this code to
    typecheck we would have to make a connection between the number of columns,
-   which is a run-time information, and the arrity of tuples representing a
+   which is a run-time information, and the arity of tuples representing a
    table row, which is compile-time information.
 
 
 2. An important observation related to the above problem is that we can easily
    construct column projections in the source language but not in the desugared
    frontend language.  The reason why everything works in the surface language
-   is the existance of `View` type class and its interaction with `Rep`
+   is the existence of `View` type class and its interaction with `Rep`
    associated type family.  Here are the definitions of `View` and `Rep`:
 
    ```haskell
@@ -394,7 +396,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
        LineageRep [a] = [(a, [(Text, Integer)])] -- representation of lineage
        LineageRep a   = a
 
-   lineageWorker :: Exp a -> Exp (LineageRep a)
+   lineageTransform :: Exp a -> Exp (LineageRep a)
    ```
 
    Using a type family allows to have a single function for processing all
@@ -402,8 +404,8 @@ encountered a lot of problems with implementing it.  Below are some of them:
    possible to work on `Q`.  Assume we have:
 
    ```haskell
-   lineageWorker :: Q a -> Q (LineageRep a)
-   lineageWorker (Q UnitE) = Q UnitE
+   lineageTransform :: Q a -> Q (LineageRep a)
+   lineageTransform (Q UnitE) = Q UnitE
    ```
 
    On the LHS we have `UnitE :: Exp ()`, and since the input argument is really
@@ -413,7 +415,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
    `Q` would not type check.  Or at least it would require some more type-level
    hackery to make this work.
 
-   So having `rowKey :: Q a -> Q Integer` is not very usefull if we need to work
+   So having `rowKey :: Q a -> Q Integer` is not very useful if we need to work
    on `Exp`.  Another attempt would be:
 
    ```haskell
@@ -421,7 +423,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
       rowKey :: Exp a -> Exp Integer
    ```
 
-   This works well inside `lineageWorker`, but now the problem is instances
+   This works well inside `lineageTransform`, but now the problem is instances
    would have to be written on representations of surface data types, eg. we
    would have to write `instance RowKey (Integer, Text, Text, Text) where...`
    instead of `instance RowKey Agency where...`.  This is not acceptable - two
@@ -441,7 +443,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
    problem (4).
 
 
-4. Transforming `TableE` with `lineageWorker` now relies on `rowKey` function,
+4. Transforming `TableE` with `lineageTransform` now relies on `rowKey` function,
    which means data type that represents a table row must be an instance of
    `RowKey`.  This means we need a type class constraint.  But it only makes
    sense to have that constraint when dealing with `TableE`.  The solution is to
@@ -457,7 +459,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
    type `a`.  But here we also face the same problem as with the updated
    definition of `rowKey`: type variable `a` is ambiguous because it appears
    only under a type family and inside a context.  The solution in both cases is
-   to introduced a type proxy:
+   to introduce a type proxy:
 
    ```haskell
    TableE :: (RowKey a) => Proxy a -> Table -> Exp (Rep [a])
@@ -466,10 +468,10 @@ encountered a lot of problems with implementing it.  Below are some of them:
       rowKey :: Proxy a -> Exp (Rep a) -> Exp Integer
    ```
 
-   Proxies can now be used to guide type inference in `lineageWorker`
+   Proxies can now be used to guide type inference in `lineageTransform`
 
    ```haskell
-   lineageWorker t@(TableE proxyA (TableDB name _ _)) = do
+   lineageTransform t@(TableE proxyA (TableDB name _ _)) = do
      let lam :: forall b. (QA b, RowKey b)
              => Proxy b -> Integer -> Exp [(Rep b, [(Text, Integer)])]
          lam proxyB a = ListE (S.singleton (TupleConstE (Tuple2E (VarE a)
@@ -479,27 +481,79 @@ encountered a lot of problems with implementing it.  Below are some of them:
    ```
 
 
-TODOs
------
+5. Implementation of lineage transformation that was outlined earlier looks like
+   this:
 
-  * work out details of lineage transformation for `ConcatMap` using pen &
-    paper.
+   ```haskell
+   lineageTransform (AppE ConcatMap (TupleConstE (Tuple2E (LamE lam) tbl))) = do
+     -- translate the comprehension generator
+     tbl' <- lineageTransform tbl
+     -- saturate the lambda and translate the resulting expression
+     boundVar <- freshVar
+     bodyExp  <- lineageTransform (lam boundVar)
 
-  * it might be worth documenting how lambdas are handled.
+     let lam_z al z = singletonE (lineageE (lineageDataE (VarE z))
+                ((lineageProvE (VarE al)) `appendE` (lineageProvE (VarE z))))
+         innerComp al  = AppE ConcatMap (TupleConstE
+                (Tuple2E (LamE (lam_z al)) bodyExp))
+         innerComp2 al = AppE ConcatMap (TupleConstE
+                (Tuple2E (LamE (\a -> subst a boundVar (innerComp al)))
+                               (singletonE (lineageDataE (VarE al)))))
+     return (AppE ConcatMap (TupleConstE (Tuple2E (LamE innerComp2) tbl')))
+   ```
 
-  * problems with constructing applications are probably worth documenting but I
-    should probably understand more about them first
+   This code performs transformation corresponding to desugaring step 1 in `q2'`
+   example.  `lineageTransform tbl` is equivalent of translating `agenciesL` and
+   `lineageTransform (lam boundVar)` corresponds to `NESTED COMPREHENSION` part
+   in the mentioned example.
 
-  * perhaps it would be possible to somehow call helpers available in the
-    surface language?  See `toLam` in `Internals` module.
+   The above code however does not compile.  The problem arises from creating
+   applications with `AppE`.  Constructor `AppE` is defined as:
+
+   ```haskell
+   AppE :: (Reify a, Reify b) => Fun a b -> Exp a -> Exp b
+   ```
+
+   Both indices `a` and `b` must be an instance of `Reify`: it must be possible
+   to assign internal DSH type to both the argument expression and the result of
+   application.  In order to verify this requirement the exact types `a` and `b`
+   must be known, but that is not the case in the above code for lineage
+   transformation.  Importantly, new variables are created (calls to `VarE` in
+   `lam_z` and `innerComp2`) but are not assigned any particular types.
+
+   Observation: created expressions will always be an instance of `Reify`.  One
+   can only write queries involving surface types that are instances of `QA`
+   class and that enforces a corresponding instance of `Reify`.
+
+   One idea to solve this problem was to change how `Reify` works: instead of
+   reifying type indices to `Exp` we could base reification on the structure of
+   expressions.  Alas, this would not work, because there are expressions with
+   internal structure nit corresponding to type.  Most importantly `TableE`
+   expression does not allow to reify the type of expression that the table
+   represents.
+
+   Another idea is to guide type inference in application using proxies:
+
+   ```haskell
+   AppE :: (Reify a, Reify b) => Proxy a -> Proxy b -> Fun a b -> Exp a -> Exp b
+   ```
+
+   This makes explicit applications slightly verbose to implement, but proxies
+   would not leak to the user space, which makes this an acceptable solution.
+   Proxies would need to be created during desugaring from source Haskell into
+   Frontend language - see functions in `Database.DSH.Frontend.Externals`.
+   Hopefully, they could be then used to guide type inference during lineage
+   transformation.
+
+   This is a work in progress.
 
 
 Questions
 ---------
 
   1. Do all collections in a query need to have Lineage attached?  What happens
-     if one table is annotated with provenance but the other is not?  I think
-     supporting this would be a useful feature.
+     if one table in a query is annotated with provenance but another one is
+     not?  I think supporting this would be a useful feature.
 
 
 Case studies
@@ -524,7 +578,7 @@ for (y <- [(data: 1, prov: []), (data: 2, prov: [])])
 ```
 
 Example from "Lineage-integrated Provenance" paper.  Interestingly, the result
-is different than the one obntained in the paper.  I believe that both results
+is different than the one obtained in the paper.  I believe that both results
 (ie. mine and the one in the paper) are semantically equivalent, but
 syntactically they are different.  Either I have misunderstood rules of the
 transformation or the paper presents a prettyfied result.
@@ -565,7 +619,8 @@ for ( y_a <- L[| agencies |] )
 for ( y_a <- L[| agencies |] )
   for ( z_a <-
          for (y_e <- L[| externalTours |] )
-           for (z_e <- L[| where (y_a.data.name == y_e.data.name && y_e.data.type == "boat")
+           for (z_e <- L[| where (y_a.data.name == y_e.data.name &&
+                                  y_e.data.type == "boat")
                            [( name = y_e.data.name, phone = y_a.data.phone )] |] )
                      [( data = z_e.data, prov = y_e.prov ++ z_e.prov )]
                     )
@@ -583,8 +638,10 @@ for ( y_a <- L[| agencies |] )
 
 for ( y_a <- L[| agencies |] )
   for ( z_a <- for (y_e <- L[| externalTours |] )
-           for (z_e <- where (y_a.data.name == y_e.data.name && y_e.data.type == "boat")
-             [data : ( name = y_e.data.name, phone = y_a.data.phone ), prov : []] )
+           for (z_e <- where (y_a.data.name == y_e.data.name &&
+                               y_e.data.type == "boat")
+             [ ( data : ( name = y_e.data.name, phone = y_a.data.phone )
+               , prov : [] ) ] )
                      [( data = z_e.data, prov = y_e.prov ++ z_e.prov )] )
     [( data = z_a.data, prov = y_a.prov ++ z_a.prov )]
 ```
