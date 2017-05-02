@@ -21,11 +21,19 @@ q0 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProv
               ]
      ]
 
---q1 :: Q [Lineage Text Integer]
-{-
-q1 = [ a_nameQ a
-     | a <- agencies
+q1 :: Q [Lineage (Text, Text) Integer]
+q1 = lineage [ tup2 (et_nameQ et) (a_phoneQ a)
+     | a  <- agencies
+     , et <- externalTours
+     , a_nameQ a  == et_nameQ et
+     , et_typeQ et == "boat"
      ]
+
+{-
+q1 :: Q [Lineage Text Integer]
+q1 = lineage [ a_nameQ a
+             | a <- agencies
+             ]
 
 ConcatMap (\a -> a_nameQ a) (agencies)
 

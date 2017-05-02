@@ -65,7 +65,7 @@ main = do
             execQ dshConn PK.q2
 -}
             putStrLn "Lineage"
-            execQ dshConn L.q0
+            execQ dshConn L.q1
 
             disconnect c
         _     -> do

@@ -212,6 +212,29 @@ agenciesL
 ```
 
 
+```
+al           :: Lineage Agency
+agenciesL    :: [ Lineage Agency ]
+(\al -> ...) :: Lineage Agency -> [ Lineage r ]
+
+arg          :: ( Lineage Agency -> [ Lineage r ], [ Lineage Agency ] )
+res          :: [ Lineage r ]
+
+
+a                 :: Agency
+[lineageDataQ al] :: [Agency]
+(\a -> ...)       :: Agency -> [ Lineage r ]
+
+arg               :: (Agency -> [ Lineage r ], [Agency])
+res               :: [ Lineage r ]
+
+z_a :: Lineage r
+(z_a -> ...) :: Lineage r -> [ Lineage r ]
+
+arg :: ( Lineage r -> [ Lineage r ], [ Lineage r ])
+res :: [ Lineage r ]
+```
+
 Failed attempt: relying on lineage hints
 ----------------------------------------
 

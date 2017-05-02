@@ -10,6 +10,7 @@ module Schema.PPDP2016.Tours.Lineage where
 import           Database.DSH
 import           Database.DSH.Provenance
 import           Data.List.NonEmpty
+import           Data.Proxy
 
 import           Database.DSH.Frontend.Internals
 
@@ -34,7 +35,7 @@ agencies = table "agencies"
                  (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
 
 instance RowKey Agency where
-    rowKey _ a = AppE (TupElem Tup4_1) a
+    rowKey _ a = AppE Proxy Proxy (TupElem Tup4_1) a
 
 data ExternalTour = ExternalTour
     { et_id          :: Integer
@@ -59,4 +60,4 @@ externalTours = table "externaltours"
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty LineageHint)
 
 instance RowKey ExternalTour where
-    rowKey _ a = AppE (TupElem Tup5_1) a
+    rowKey _ a = AppE Proxy Proxy (TupElem Tup5_1) a
