@@ -211,28 +211,28 @@ concatMap (\al ->
 agenciesL
 ```
 
+Below are types of variables and subexpressions in the transformed code above.
+`r` type variable stands for result type (`(Text, Text)` in this example).
+`arg` and `res` are argument and result type indices for `ConcatMap` data
+constructor used by DSH.
 
 ```
 al           :: Lineage Agency
 agenciesL    :: [ Lineage Agency ]
 (\al -> ...) :: Lineage Agency -> [ Lineage r ]
-
 arg          :: ( Lineage Agency -> [ Lineage r ], [ Lineage Agency ] )
 res          :: [ Lineage r ]
-
 
 a                 :: Agency
 [lineageDataQ al] :: [Agency]
 (\a -> ...)       :: Agency -> [ Lineage r ]
-
 arg               :: (Agency -> [ Lineage r ], [Agency])
 res               :: [ Lineage r ]
 
-z_a :: Lineage r
+2z_a          :: Lineage r
 (z_a -> ...) :: Lineage r -> [ Lineage r ]
-
-arg :: ( Lineage r -> [ Lineage r ], [ Lineage r ])
-res :: [ Lineage r ]
+arg          :: ( Lineage r -> [ Lineage r ], [ Lineage r ])
+res          :: [ Lineage r ]
 ```
 
 Failed attempt: relying on lineage hints
@@ -558,7 +558,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
    Another idea is to guide type inference in application using proxies:
 
    ```haskell
-   AppE :: (Reify a, Reify b) => Proxy a -> Proxy b -> Fun a b -> Exp a -> Exp b
+   AppE :: (Reify a) => Proxy a -> Fun a b -> Exp a -> Exp b
    ```
 
    This makes explicit applications slightly verbose to implement, but proxies
@@ -569,6 +569,33 @@ encountered a lot of problems with implementing it.  Below are some of them:
    transformation.
 
    This is a work in progress.
+
+
+TODO
+----
+
+  * rename proxy functions
+
+  * better naming of everything in lineageTransform
+
+  * move helpers to a different module so that functions working on Q reuse
+    helpers
+
+  * search for all JSTOLAREK tags
+
+  * polymorphic keys
+
+  * generate substTuple with TH
+
+  * generate RowKey instances with TH
+
+  * update description above
+
+  * implement all example queries
+
+  * think of interface that should be exposed to the user
+
+  * try to break the implementation
 
 
 Questions
