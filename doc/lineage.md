@@ -164,7 +164,7 @@ concatMap (\al ->
                         (lineageProvQ al `lineageAppendQ` lineageProvQ z_a) ])
          ( NESTED COMPREHENSION ))
   [ lineageDataQ al ])
-egenciesL
+agenciesL
 ```
 
 Desugaring of `q2'`, step 2:
@@ -184,7 +184,7 @@ concatMap (\al ->
             [ lineageDataQ etl ])
          externalToursL))
   [ lineageDataQ al ])
-egenciesL
+agenciesL
 ```
 
 Desugaring of `q2'`, final step:
@@ -208,7 +208,7 @@ concatMap (\al ->
             [lineageDataQ etl])
          externalToursL))
   [lineageDataQ al])
-egenciesL
+agenciesL
 ```
 
 
