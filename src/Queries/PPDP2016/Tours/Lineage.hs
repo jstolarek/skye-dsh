@@ -11,16 +11,16 @@ import           Database.DSH.Provenance
 
 import           Schema.PPDP2016.Tours.Lineage
 
-q0 :: Q [Lineage Text Integer]
+q0 :: Q [Lineage Text]
 q0 = [ lineageQ (lineageDataQ z_a) (lineageProvQ al `lineageAppendQ` lineageProvQ z_a)
      | al <- lineage agencies
      , let a = lineageDataQ al
-     , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text Integer)
+     , z_a <- [ emptyLineageQ (a_nameQ a) :: Q (Lineage Text)
               | true
               ]
      ]
 
-q1 :: Q [Lineage (Text, Text) Integer]
+q1 :: Q [Lineage (Text, Text)]
 q1 = lineage [ tup2 (et_nameQ et) (a_phoneQ a)
      | a  <- agencies
      , et <- externalTours

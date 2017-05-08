@@ -574,8 +574,7 @@ encountered a lot of problems with implementing it.  Below are some of them:
 TODO
 ----
 
-  * move helpers to a different module so that functions working on Q reuse
-    helpers
+  * RowKey instances for single-column tables
 
   * search for all JSTOLAREK tags
 
@@ -590,6 +589,31 @@ TODO
   * think of interface that should be exposed to the user
 
   * try to break the implementation
+
+
+Problems with current design
+----------------------------
+
+  * deriving instances of RowKey is clunky.  User has to explicitly specify
+    index of the key column.  This is error prone and difficult to maintain.
+    Ideally, we would compute this automatically based on table declaration but
+    this is chicken-and-egg problem: to declare a table we require a `RowKey`
+    instance.  Alternatively, programmer could be required to declare columns
+    and keys as separate bindings that would then be used both in table
+    declaration and in call to `derivingRowKey`.  But this would mean that these
+    bindings would have to be in a separate module putting even more burden on
+    the programmer.
+
+  * Moreover, it requires one more extra declaration in a file that defines the
+    schema, which means that adding support for lineage is not
+    backwards-compatible and affect everyone that uses DSH, even if they don't
+    use provenance.
+
+  * deriving of instances also does not work if user decides explicitly to work
+    with tuples rather than with a record data type.
+
+  * Finally, polymorphic keys don't work, so it is no longer possible to declate
+    a table that does not have an `Integer` key.
 
 
 Questions

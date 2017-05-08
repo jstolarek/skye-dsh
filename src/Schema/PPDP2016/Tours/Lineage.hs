@@ -8,11 +8,8 @@
 module Schema.PPDP2016.Tours.Lineage where
 
 import           Database.DSH
-import           Database.DSH.Provenance
 import           Data.List.NonEmpty
 import           Data.Proxy
-
-import           Database.DSH.Frontend.Internals
 
 data Agency = Agency
     { a_id       :: Integer
@@ -24,6 +21,7 @@ data Agency = Agency
 deriveDSH              ''Agency
 deriveTA               ''Agency
 generateTableSelectors ''Agency
+deriveRowKey           ''Agency 1
 
 agencies :: Q [Agency]
 agencies = table "agencies"
@@ -32,10 +30,8 @@ agencies = table "agencies"
                  , "a_based_in"
                  , "a_phone"
                  ])
-                 (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
+                 (TableHints (pure $ Key (pure "a_id")) NonEmpty LineageHint)
 
-instance RowKey Agency where
-    rowKey _ a = AppE Proxy (TupElem Tup4_1) a
 
 data ExternalTour = ExternalTour
     { et_id          :: Integer
@@ -48,6 +44,7 @@ data ExternalTour = ExternalTour
 deriveDSH              ''ExternalTour
 deriveTA               ''ExternalTour
 generateTableSelectors ''ExternalTour
+deriveRowKey           ''ExternalTour 1
 
 externalTours :: Q [ExternalTour]
 externalTours = table "externaltours"
@@ -57,7 +54,5 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
-                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty LineageHint)
-
-instance RowKey ExternalTour where
-    rowKey _ a = AppE Proxy (TupElem Tup5_1) a
+                      (TableHints (pure $ Key (pure "et_id")) NonEmpty
+                                  LineageHint)
