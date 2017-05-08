@@ -35,7 +35,7 @@ agencies = table "agencies"
                  (TableHints (pure $ Key (pure "a_id") ) NonEmpty LineageHint)
 
 instance RowKey Agency where
-    rowKey _ a = AppE Proxy Proxy (TupElem Tup4_1) a
+    rowKey _ a = AppE Proxy (TupElem Tup4_1) a
 
 data ExternalTour = ExternalTour
     { et_id          :: Integer
@@ -60,4 +60,4 @@ externalTours = table "externaltours"
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty LineageHint)
 
 instance RowKey ExternalTour where
-    rowKey _ a = AppE Proxy Proxy (TupElem Tup5_1) a
+    rowKey _ a = AppE Proxy (TupElem Tup5_1) a

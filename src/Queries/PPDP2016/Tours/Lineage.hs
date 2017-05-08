@@ -8,7 +8,6 @@ module Queries.PPDP2016.Tours.Lineage where
 
 import           Database.DSH
 import           Database.DSH.Provenance
-import           Database.DSH.Translate.Lineage
 
 import           Schema.PPDP2016.Tours.Lineage
 

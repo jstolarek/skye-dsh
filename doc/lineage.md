@@ -229,7 +229,7 @@ a                 :: Agency
 arg               :: (Agency -> [ Lineage r ], [Agency])
 res               :: [ Lineage r ]
 
-2z_a          :: Lineage r
+z_a          :: Lineage r
 (z_a -> ...) :: Lineage r -> [ Lineage r ]
 arg          :: ( Lineage r -> [ Lineage r ], [ Lineage r ])
 res          :: [ Lineage r ]
@@ -574,18 +574,12 @@ encountered a lot of problems with implementing it.  Below are some of them:
 TODO
 ----
 
-  * rename proxy functions
-
-  * better naming of everything in lineageTransform
-
   * move helpers to a different module so that functions working on Q reuse
     helpers
 
   * search for all JSTOLAREK tags
 
   * polymorphic keys
-
-  * generate substTuple with TH
 
   * generate RowKey instances with TH
 
