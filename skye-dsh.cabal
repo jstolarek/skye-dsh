@@ -11,7 +11,7 @@ cabal-version:       >=1.10
 
 executable skye-dsh
   main-is:             Main.hs
-  build-depends:       base >=4.9 && <4.10,
+  build-depends:       base >=4.9 && <4.12,
                        DSH == 0.13.0.1,
                        dsh-sql == 0.3.0.1,
                        HDBC,
