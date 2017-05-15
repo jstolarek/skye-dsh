@@ -574,19 +574,15 @@ encountered a lot of problems with implementing it.  Below are some of them:
 TODO
 ----
 
-  * RowKey instances for single-column tables
+  * polymorphic keys using run-time type equality
 
   * search for all JSTOLAREK tags
 
-  * polymorphic keys
-
-  * generate RowKey instances with TH
-
   * update description above
 
-  * implement all example queries
-
   * think of interface that should be exposed to the user
+
+  * implement missing cases in lineage transformation
 
   * try to break the implementation
 

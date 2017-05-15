@@ -11,12 +11,11 @@ import           Database.DSH.Backend
 import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
-{-
 import qualified Queries.PPDP2016.Tours.NoProv            as NP
 import qualified Queries.PPDP2016.Tours.WhereProv         as WP
 import qualified Queries.PPDP2016.Tours.WhereProvPolyKeys as PK
--}
 import qualified Queries.PPDP2016.Tours.Lineage           as L
+
 
 getConn :: String -> IO Connection
 getConn dsn = connectODBC (printf "DSN=%s" dsn)
@@ -37,7 +36,6 @@ debugFunctions =  -- CL
                   , ( showFlattenedOptQ  , "FKL: showFlattenedOptQ"  )
                   ]
 
-
 main :: IO ()
 main = do
     argv <- getArgs
@@ -45,7 +43,6 @@ main = do
         [dsn] -> do
             c <- getConn dsn
             let dshConn = pgConn c
-{-
             putStrLn "No provenance"
             execQ dshConn NP.q1
             execQ dshConn NP.q1'
@@ -63,12 +60,15 @@ main = do
             execQ dshConn PK.q1'
             execQ dshConn PK.q1''
             execQ dshConn PK.q2
--}
+
             putStrLn "Lineage"
             execQ dshConn L.q1
+            execQ dshConn L.q1'
+            execQ dshConn L.q1''
+            execQ dshConn L.q2
 
             disconnect c
         _     -> do
-            putStrLn "L.q1"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q0)
+            putStrLn "L.q2"
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q2)
                   debugFunctions

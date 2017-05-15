@@ -41,6 +41,7 @@ agencies = table "agencies"
                  , "a_based_in"
                  , "a_phone"
                  ])
+                 a_idQ
                  (TableHints ( Key ( "a_id" :| [ "a_name" ])  :|
                              [ Key (pure "a_id")
                              ] )
@@ -55,5 +56,6 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
+                      et_idQ
                       (TableHints (pure $ Key (pure "et_id") ) NonEmpty
                                   NoProvenance)
