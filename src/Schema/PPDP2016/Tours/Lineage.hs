@@ -21,7 +21,6 @@ data Agency = Agency
 deriveDSH              ''Agency
 deriveTA               ''Agency
 generateTableSelectors ''Agency
-deriveRowKey           ''Agency 1
 
 agencies :: Q [Agency]
 agencies = table "agencies"
@@ -30,6 +29,7 @@ agencies = table "agencies"
                  , "a_based_in"
                  , "a_phone"
                  ])
+                 a_idQ
                  (TableHints (pure $ Key (pure "a_id")) NonEmpty LineageHint)
 
 
@@ -44,7 +44,6 @@ data ExternalTour = ExternalTour
 deriveDSH              ''ExternalTour
 deriveTA               ''ExternalTour
 generateTableSelectors ''ExternalTour
-deriveRowKey           ''ExternalTour 1
 
 externalTours :: Q [ExternalTour]
 externalTours = table "externaltours"
@@ -54,5 +53,6 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
+                      et_idQ
                       (TableHints (pure $ Key (pure "et_id")) NonEmpty
                                   LineageHint)
