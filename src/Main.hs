@@ -15,6 +15,7 @@ import qualified Queries.PPDP2016.Tours.NoProv            as NP
 import qualified Queries.PPDP2016.Tours.WhereProv         as WP
 import qualified Queries.PPDP2016.Tours.WhereProvPolyKeys as PK
 import qualified Queries.PPDP2016.Tours.Lineage           as L
+import qualified Queries.PPDP2016.Tours.LineagePolyKeys   as LP
 
 
 getConn :: String -> IO Connection
@@ -49,13 +50,13 @@ main = do
             execQ dshConn NP.q1''
             execQ dshConn NP.q2
 
-            putStrLn "Built-in where-provenance"
+            putStrLn "Where-provenance"
             execQ dshConn WP.q1
             execQ dshConn WP.q1'
             execQ dshConn WP.q1''
             execQ dshConn WP.q2
 
-            putStrLn "Built-in where-provenance, polymorphic keys"
+            putStrLn "Where-provenance, polymorphic keys"
             execQ dshConn PK.q1
             execQ dshConn PK.q1'
             execQ dshConn PK.q1''
@@ -66,6 +67,12 @@ main = do
             execQ dshConn L.q1'
             execQ dshConn L.q1''
             execQ dshConn L.q2
+
+            putStrLn "Lineage, polymorphic keys"
+            execQ dshConn LP.q1
+            execQ dshConn LP.q1'
+            execQ dshConn LP.q1''
+            execQ dshConn LP.q2
 
             disconnect c
         _     -> do

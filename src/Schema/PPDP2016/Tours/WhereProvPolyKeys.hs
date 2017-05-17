@@ -26,7 +26,7 @@ data ExternalTour = ExternalTour
     { et_id          :: Integer
     , et_name        :: Text
     , et_destination :: Text
-    , et_type        :: Text
+    , et_type        :: WhereProv Text (Integer, Text)
     , et_price       :: Integer
     } deriving (Show)
 
@@ -41,7 +41,7 @@ agencies = table "agencies"
                  , "a_based_in"
                  , "a_phone"
                  ])
-                 a_idQ
+                 (\a -> tup2 (a_idQ a) (a_nameQ a))
                  (TableHints ( Key ( "a_id" :| [ "a_name" ])  :|
                              [ Key (pure "a_id")
                              ] )
@@ -56,6 +56,9 @@ externalTours = table "externaltours"
                       , "et_type"
                       , "et_price"
                       ])
-                      et_idQ
-                      (TableHints (pure $ Key (pure "et_id") ) NonEmpty
-                                  NoProvenance)
+                      (\et -> tup2 (et_idQ et) (et_nameQ et))
+                      (TableHints ( Key ( "et_id" :| [ "et_name" ])  :|
+                                  [ Key (pure "et_id")
+                                  ] )
+                                  NonEmpty
+                                  (WhereProvenance $ pure "et_type"))

@@ -18,7 +18,7 @@ q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
      | a  <- agencies
      , et <- externalTours
      , a_nameQ a  == et_nameQ et
-     , et_typeQ et == "boat"
+     , dataQ (et_typeQ et) == "boat"
      ]
 
 
@@ -26,7 +26,7 @@ q1 = [ tup2 (et_nameQ et) (a_phoneQ a)
 q1' :: Q [(Text, WhereProv Text (Integer, Text))]
 q1' = [ tup2 (et_nameQ et) (a_phoneQ a)
       | et <- externalTours
-      , et_typeQ et == "boat"
+      , dataQ (et_typeQ et) == "boat"
       , a  <- agencies
       , a_nameQ a  == et_nameQ et
       ]
@@ -41,11 +41,11 @@ matchingAgencies name =
 q1'' :: Q [(Text, WhereProv Text (Integer, Text))]
 q1'' = [ a
        | et <- externalTours
-       , et_typeQ et == "boat"
+       , dataQ (et_typeQ et) == "boat"
        , a <- matchingAgencies (et_nameQ et)
        ]
 
-q2 :: Q [(Text, (Text, Text))]
+q2 :: Q [(Text, (Text, WhereProv Text (Integer, Text)))]
 q2 = [ tup2 (a_nameQ a) tours
      | a <- agencies
      , tours <- [ tup2 (et_destinationQ et) (et_typeQ et)
