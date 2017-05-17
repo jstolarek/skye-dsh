@@ -574,15 +574,13 @@ encountered a lot of problems with implementing it.  Below are some of them:
 TODO
 ----
 
-  * polymorphic keys using run-time type equality
+  * implement missing cases in lineage transformation
 
   * search for all JSTOLAREK tags
 
   * update description above
 
   * think of interface that should be exposed to the user
-
-  * implement missing cases in lineage transformation
 
   * try to break the implementation
 

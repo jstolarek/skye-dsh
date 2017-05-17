@@ -10,6 +10,7 @@ import           Database.DSH
 import           Database.DSH.Provenance
 
 import qualified Queries.PPDP2016.Tours.NoProv as NP
+import           Schema.PPDP2016.Tours.NoProv
 
 q1 :: Q [Lineage (Text, Text) Integer]
 q1 = lineage NP.q1
@@ -23,3 +24,19 @@ q1'' = lineage NP.q1''
 
 q2 :: Q [Lineage (Text, (Text, Text)) Integer]
 q2 = lineage NP.q2
+
+-- Nested lineage
+
+matchingAgencies :: Q Text -> Q [(Text, Text)]
+matchingAgencies name =
+    [ tup2 (a_nameQ a) (a_phoneQ a)
+    | a <- agencies
+    , a_nameQ a == name
+    ]
+
+qNested :: Q [Lineage (Text, [Lineage (Text, Text) Integer]) Integer]
+qNested = lineage [ tup2 (et_nameQ et) a
+                  | et <- externalTours
+                  , et_typeQ et == "boat"
+                  , let a = lineage (matchingAgencies (et_nameQ et))
+                  ]

@@ -74,8 +74,11 @@ main = do
             execQ dshConn LP.q1''
             execQ dshConn LP.q2
 
+            putStrLn "Lineage, nested"
+            execQ dshConn L.qNested
+
             disconnect c
         _     -> do
             putStrLn "L.q2"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q2)
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.qNested)
                   debugFunctions
