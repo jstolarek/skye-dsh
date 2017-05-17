@@ -576,11 +576,7 @@ TODO
 
   * implement missing cases in lineage transformation
 
-  * search for all JSTOLAREK tags
-
   * update description above
-
-  * think of interface that should be exposed to the user
 
   * try to break the implementation
 
