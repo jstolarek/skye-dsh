@@ -574,11 +574,40 @@ encountered a lot of problems with implementing it.  Below are some of them:
 TODO
 ----
 
-  * implement missing cases in lineage transformation
-
   * update description above
 
-  * try to break the implementation
+lineage (filter f xs)
+
+filter (\a -> all (map (\z -> f z) [lineageDataE a])) (lineage xs)
+
+lineage (map f xs)
+
+map (\a -> lineageE (f (lineageDataE a)) (lineageProvE a)) (lineage xs)
+
+map (\a -> head (map (\z -> lineage (f z) (lineageProvE a)) [lineageDataE a] )) (lineage xs)
+
+-- When user says:
+--
+--   lineage (map f xs)
+--
+-- we want:
+--
+--   map (\a -> lineageE (f (lineageDataE a)) (lineageProvE a)) (lineage xs)
+--
+-- and we express this as:
+--
+--   map (\a -> head (map (\z -> lineageE (f z) (lineageProvE a))
+--                        [lineageDataE a]))
+--       (lineage xs)
+
+head:
+
+          AppE Proxy Only (AppE Proxy Map (TupleConstE (Tuple2E
+             (LamE (\x -> (AppE Proxy Snd (VarE Proxy x))))
+       (AppE Proxy Filter (TupleConstE (Tuple2E
+         (LamE (\xs -> AppE Proxy Eq (TupleConstE (Tuple2E
+                      (AppE Proxy Snd (VarE Proxy xs)) (IntegerE 1)))))
+         (AppE Proxy Number ...)))))) )
 
 
 Problems with current design
