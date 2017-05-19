@@ -293,8 +293,11 @@ in Haskell's type system.  It is not possible to rewrite it later to a form that
 would type check.
 
 
-Ongoing work: Frontend-to-Frontend transformation
--------------------------------------------------
+Frontend-to-Frontend transformation
+-----------------------------------
+
+**Note:** This section recreates development of my solution, which means it
+describes several dead ends encountered before arriving at the final result.
 
 Another idea is to write a user-space function that will take a well-typed query
 and transform it into a query with lineage.  Usage would look like this:
@@ -466,11 +469,11 @@ encountered a lot of problems with implementing it.  Below are some of them:
    problem (4).
 
 
-4. Transforming `TableE` with `lineageTransform` now relies on `rowKey` function,
-   which means data type that represents a table row must be an instance of
-   `RowKey`.  This means we need a type class constraint.  But it only makes
-   sense to have that constraint when dealing with `TableE`.  The solution is to
-   add a type class constraint to `TableE` constructor:
+4. Transforming `TableE` with `lineageTransform` now relies on `rowKey`
+   function, which means data type that represents a table row must be an
+   instance of `RowKey`.  This means we need a type class constraint.  But it
+   only makes sense to have that constraint when dealing with `TableE`.  The
+   solution is to add a type class constraint to `TableE` constructor:
 
    ```haskell
    TableE :: (RowKey a) => Table -> Exp (Rep [a])
@@ -503,8 +506,44 @@ encountered a lot of problems with implementing it.  Below are some of them:
      return (AppE ConcatMap (TupleConstE (Tuple2E (LamE (lam proxyA)) t)))
    ```
 
+5. The above solution works, but it leads to horrible user interface.  The idea
+   is that there exists a function `derivingRowKey` that derives `RowKey`
+   instances using Template Haskell.  However, a number of problems arise:
 
-5. Implementation of lineage transformation that was outlined earlier looks like
+   * deriving instances of `RowKey` is clunky.  User has to explicitly specify
+     index of the key column:
+
+     ```haskell
+     derivingRowKey ''Agency 1
+     ```
+
+     This is error prone and difficult to maintain.  Ideally, we would compute
+     this automatically based on `table` declaration but this is chicken-and-egg
+     problem: to declare a table we require that `RowKey` instance exists
+     already.  Alternatively, programmer could be required to declare columns
+     and keys as separate bindings that would then be used both in table
+     declaration and in call to `derivingRowKey`.  But TH requires that these
+     declarations of column names and key column are be in a separate module,
+     which is a very annoying restriction.
+
+   * deriving of instances does not work if user decides explicitly to work with
+     tuples rather than with a record data type.  Moreover, for tuples even
+     instances written by hand are not satisfactory: if we have `(Integer,
+     Integer, Text)` then for one table key can be the first column, but for
+     another table it can be the second column.  With tuples there is no way of
+     telling the difference.
+
+   The solution to above problems is to give up on `RowKey` type class
+   altogether and instead require that user provides a function to project the
+   table's primary keys.  This solves all the above problems and even allows
+   polymorphic keys.  The only downside of this approach is that users have to
+   provide key projecting function even if they don't use lineage, but that
+   seems like an acceptable requirement. An alternative would be to wrap this
+   function in a `Maybe`.  This is still backwards incompatible but at least
+   gives users option of passing `Nothing`.
+
+
+6. Implementation of lineage transformation that was outlined earlier looks like
    this:
 
    ```haskell
@@ -555,92 +594,149 @@ encountered a lot of problems with implementing it.  Below are some of them:
    expression does not allow to reify the type of expression that the table
    represents.
 
-   Another idea is to guide type inference in application using proxies:
+   So the final adopted solution is to guide type inference using proxies.  This
+   requires adding a type proxy to applications and variables:
 
    ```haskell
-   AppE :: (Reify a) => Proxy a -> Fun a b -> Exp a -> Exp b
+   AppE :: Reify a => Proxy a -> Fun a b -> Exp a -> Exp b
+   VarE :: Reify a => Proxy a -> Integer -> Exp a
    ```
 
-   This makes explicit applications slightly verbose to implement, but proxies
-   would not leak to the user space, which makes this an acceptable solution.
-   Proxies would need to be created during desugaring from source Haskell into
-   Frontend language - see functions in `Database.DSH.Frontend.Externals`.
-   Hopefully, they could be then used to guide type inference during lineage
-   transformation.
+   Explicitly constructing syntax trees now becomes even more verbose than it
+   was before, but proxies don't leak into user space, which makes this an
+   acceptable solution.  In many cases Haskell can infer type of a `Proxy`, thus
+   not requiring an explicit type annotation.  This is especially the case for
+   functions in `Database.DSH.Frontend.Externals` module.
 
-   This is a work in progress.
+   However, when performing lineage transformation type of proxies needs to be
+   transformed explicitly, for example:
 
+   ```haskell
+   compLineageApp al = AppE (proxyLineageApp proxy) ConcatMap (TupleConstE
+             (Tuple2E (LamE (lamAppend al)) bodyExp))
 
-TODO
-----
+   proxyLineageApp :: Proxy (a -> [b], [a])
+                   -> Proxy (LineageE b k -> [LineageE b k], [LineageE b k])
+   proxyLineageApp Proxy = Proxy
+   ```
 
-  * update description above
+Loose ends
+----------
 
-lineage (filter f xs)
+### Supporting lineage transformation for list processing functions
 
-filter (\a -> all (map (\z -> f z) [lineageDataE a])) (lineage xs)
+Above design allows to apply lineage transform to queries written as list
+comprehensions:
 
+```haskell
+lineage [ a_nameQ a | a <- agencies ]
+```
+
+But one might want to support lineage transformation for collections transformed
+by explicit application of list functions like `filter`, `map`, and so on:
+
+```haskell
+lineage (filter f [ a_nameQ a | a <- agencies ])
+```
+
+It is perfectly reasonable to expect this to work.  Conceptually making this
+work is fairly simple.  Since list created by a query has type `[Text]` then `f`
+has type `Text -> Bool`.  Performing lineage transformation on `filter` means
+that we need the following recursive translation:
+
+```haskell
+filter (\z -> f (lineageDataE z)) (lineage [ a_nameQ a | a <- agencies ])
+```
+
+where `lineageDataE` projects data component of `z` - note that elements of a
+list we're filtering are now extended with lineage, so we need to project the
+data component before we can apply `f`.  However, `f (lineageDataE z)` is not a
+valid DSH expression.  In DSH functions can only be applied to variables.  So we
+would need the lambda to look like this:
+
+```haskell
+\z -> let y = lineageDataE z in f y
+```
+
+Except that `let` is a construct in surface Haskell that has no equivalent in
+the frontend language syntax tree, so we cannot create let bindings in this way.
+It seems that the only way to proceed is using a roundabout translation that
+looks like this:
+
+```haskell
+filter (\z -> all (map f [lineageDataE z]))
+       (lineage [ a_nameQ a | a <- agencies ])
+```
+
+Transformation for `map` is similarly tricky.  When user says
+
+```haskell
 lineage (map f xs)
+```
 
+we want to translate it to:
+
+```haskell
 map (\a -> lineageE (f (lineageDataE a)) (lineageProvE a)) (lineage xs)
+```
 
-map (\a -> head (map (\z -> lineage (f z) (lineageProvE a)) [lineageDataE a] )) (lineage xs)
+where `lineageE` is a lineage constructor and `lineageDataE`/`lineageProvE`
+project data and provenance components respectively.  In other words, we want to
+think of lineage-annotated data as a functor.  But again, we are forced to use a
+convoluted translation:
 
--- When user says:
---
---   lineage (map f xs)
---
--- we want:
---
---   map (\a -> lineageE (f (lineageDataE a)) (lineageProvE a)) (lineage xs)
---
--- and we express this as:
---
---   map (\a -> head (map (\z -> lineageE (f z) (lineageProvE a))
---                        [lineageDataE a]))
---       (lineage xs)
+```haskell
+map (\z -> head (map (\y -> lineageE (f y) (lineageProvE z)) [lineageDataE z]))
+    (lineage xs)
+```
 
-head:
+It gets worse than this.  `head` and `all` are not native database operations
+and are expressed as combination of such functions:
 
-          AppE Proxy Only (AppE Proxy Map (TupleConstE (Tuple2E
-             (LamE (\x -> (AppE Proxy Snd (VarE Proxy x))))
-       (AppE Proxy Filter (TupleConstE (Tuple2E
-         (LamE (\xs -> AppE Proxy Eq (TupleConstE (Tuple2E
-                      (AppE Proxy Snd (VarE Proxy xs)) (IntegerE 1)))))
-         (AppE Proxy Number ...)))))) )
+```haskell
+all :: (QA a) => (Q a -> Q Bool) -> Q [a] -> Q Bool
+all f = and . map f
 
+head :: (QA a) => Q [a] -> Q a
+head as = only $ map fst $ filter (\xp -> snd xp == 1) $ number as
+```
 
-Problems with current design
-----------------------------
-
-  * deriving instances of RowKey is clunky.  User has to explicitly specify
-    index of the key column.  This is error prone and difficult to maintain.
-    Ideally, we would compute this automatically based on table declaration but
-    this is chicken-and-egg problem: to declare a table we require a `RowKey`
-    instance.  Alternatively, programmer could be required to declare columns
-    and keys as separate bindings that would then be used both in table
-    declaration and in call to `derivingRowKey`.  But this would mean that these
-    bindings would have to be in a separate module putting even more burden on
-    the programmer.
-
-  * Moreover, it requires one more extra declaration in a file that defines the
-    schema, which means that adding support for lineage is not
-    backwards-compatible and affect everyone that uses DSH, even if they don't
-    use provenance.
-
-  * deriving of instances also does not work if user decides explicitly to work
-    with tuples rather than with a record data type.
-
-  * Finally, polymorphic keys don't work, so it is no longer possible to declate
-    a table that does not have an `Integer` key.
+where `only` extracts element from a singleton list and `number` adds a unique
+index to each element of a list.  Performing transformations for `filter`, `map`
+and other list processing functions would require explicit construction of a
+corresponding syntax tree, which is a major pain.  For example, definition of
+`head xs` looks more or less like this:
 
 
-Questions
----------
+```haskell
+AppE Proxy Only
+ (AppE Proxy Map (TupleConstE (Tuple2E
+    (LamE (\x -> (AppE Proxy Snd (VarE Proxy x))))
+    (AppE Proxy Filter (TupleConstE (Tuple2E
+       (LamE (\x -> AppE Proxy Eq (TupleConstE (Tuple2E
+          (AppE Proxy Snd (VarE Proxy x)) (IntegerE 1)))))
+       (AppE Proxy Number xs)))))))
+```
 
-  1. Do all collections in a query need to have Lineage attached?  What happens
-     if one table in a query is annotated with provenance but another one is
-     not?  I think supporting this would be a useful feature.
+Possibly, some of `Proxy` arguments would have to be replaced with explicit type
+transformations.
+
+Summing up, all of this is possible, but extremely annoying to implement.  For
+now it is left as an unimplemented feature.  Functions for which support is
+unimplemented are: `map`, `filter`, `concat`, `sum`, `avg`, `maximum`,
+`minimum`, `nub`, `append`, `zip`, `groupWithKey`, `sortWith`, `if`
+conditionals, `fst`, `snd` and tuple projections, `only`, `reverse` and
+`number`.  Note that some of them it might not be immediately obvious what the
+transformation should look like.
+
+
+### Selective lineage tracking for tables
+
+At the moment `lineage` function transforms the whole query passed to it,
+tracking provenance for all encountered tables.  An alternative design choice
+would be to track lineage only for tables mark with provenance hints.  This
+would be easy to implement: during lineage transformation tables without a
+lineage hint would be annotated with empty lineage.
 
 
 Case studies
