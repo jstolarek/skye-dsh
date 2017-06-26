@@ -40,3 +40,8 @@ qNested = lineage [ tup2 (et_nameQ et) a
                   , et_typeQ et == "boat"
                   , let a = lineage (matchingAgencies (et_nameQ et))
                   ]
+
+-- FL primitives
+
+q1map :: Q [Lineage Text Integer]
+q1map = lineage (map fst NP.q1)
