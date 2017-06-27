@@ -45,3 +45,13 @@ qNested = lineage [ tup2 (et_nameQ et) a
 
 q1map :: Q [Lineage Text Integer]
 q1map = lineage (map fst NP.q1)
+
+--
+
+agenciesNames :: Q [Text]
+agenciesNames = [ a_nameQ a | a <- agencies ]
+
+lineageBug :: Q [Lineage Text Integer]
+lineageBug = lineage [ et_nameQ et
+                     | et <- externalTours
+                     , et_nameQ et `elem` agenciesNames ]
