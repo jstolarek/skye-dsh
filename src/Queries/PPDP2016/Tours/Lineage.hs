@@ -46,7 +46,13 @@ qNested = lineage [ tup2 (et_nameQ et) a
 q1map :: Q [Lineage Text Integer]
 q1map = lineage (map fst NP.q1)
 
---
+q1append :: Q [Lineage (Text, Text) Integer]
+q1append = lineage (append NP.q1 NP.q1)
+
+q1reverse :: Q [Lineage (Text, Text) Integer]
+q1reverse = lineage (reverse NP.q1)
+
+-- Exposing lineage bug
 
 agenciesNames :: Q [Text]
 agenciesNames = [ a_nameQ a | a <- agencies ]
