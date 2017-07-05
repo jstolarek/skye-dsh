@@ -87,5 +87,5 @@ main = do
             disconnect c
         _     -> do
             putStrLn "L.q2"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.lineageBug)
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q1)
                   debugFunctions

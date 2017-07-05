@@ -12,6 +12,9 @@ import           Database.DSH.Provenance
 import qualified Queries.PPDP2016.Tours.NoProv as NP
 import           Schema.PPDP2016.Tours.NoProv
 
+q0 :: Q [Lineage Agency Integer]
+q0 = lineage [ a | a <- agencies ]
+
 q1 :: Q [Lineage (Text, Text) Integer]
 q1 = lineage NP.q1
 
