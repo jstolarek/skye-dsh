@@ -64,3 +64,6 @@ lineageBug :: Q [Lineage Text Integer]
 lineageBug = lineage [ et_nameQ et
                      | et <- externalTours
                      , et_nameQ et `elem` agenciesNames ]
+
+brokenLet :: Q [Lineage Agency Integer]
+brokenLet = lineage [ a | a <- agencies, a_nameQ a == "EdinTours" ]

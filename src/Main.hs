@@ -44,6 +44,7 @@ main = do
         [dsn] -> do
             c <- getConn dsn
             let dshConn = pgConn c
+{-
             putStrLn "No provenance"
             execQ dshConn NP.q1
             execQ dshConn NP.q1'
@@ -84,8 +85,11 @@ main = do
 
             putStrLn "Lineage bug"
             execQ dshConn L.lineageBug
+-}
+            putStrLn "Lineage - broken let-bindings demo"
+            execQ dshConn L.brokenLet
             disconnect c
         _     -> do
             putStrLn "L.q2"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q1)
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.brokenLet)
                   debugFunctions
