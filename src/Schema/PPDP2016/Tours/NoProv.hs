@@ -5,8 +5,12 @@
 {-# LANGUAGE ViewPatterns         #-}
 module Schema.PPDP2016.Tours.NoProv where
 
-import          Database.DSH
-import          Data.List.NonEmpty
+import           Database.DSH
+import           Data.List.NonEmpty
+
+-- JSTOLAREK: needed for QLTable instances
+import           Database.DSH.Provenance
+import           Data.Type.Equality
 
 data Agency = Agency
     { a_id       :: Integer
@@ -19,6 +23,11 @@ deriveDSH              ''Agency
 deriveTA               ''Agency
 generateTableSelectors ''Agency
 
+-- JSTOLAREK: generate this with TH
+instance QLTable Agency where
+    type LT Agency k = Agency
+    ltEq _ _ = Refl
+
 data ExternalTour = ExternalTour
     { et_id          :: Integer
     , et_name        :: Text
@@ -30,6 +39,11 @@ data ExternalTour = ExternalTour
 deriveDSH              ''ExternalTour
 deriveTA               ''ExternalTour
 generateTableSelectors ''ExternalTour
+
+-- JSTOLAREK: generate this with TH
+instance QLTable ExternalTour where
+    type LT ExternalTour k = ExternalTour
+    ltEq _ _ = Refl
 
 agencies :: Q [Agency]
 agencies = table "agencies"

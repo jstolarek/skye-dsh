@@ -62,13 +62,13 @@ main = do
             execQ dshConn PK.q1'
             execQ dshConn PK.q1''
             execQ dshConn PK.q2
-
+-}
             putStrLn "Lineage"
             execQ dshConn L.q1
+{-
             execQ dshConn L.q1'
             execQ dshConn L.q1''
             execQ dshConn L.q2
-
             putStrLn "Lineage: FL primitves"
             execQ dshConn L.q1map
             execQ dshConn L.q1append
@@ -85,9 +85,9 @@ main = do
 
             putStrLn "Lineage bug"
             execQ dshConn L.lineageBug
--}
             putStrLn "Lineage - broken let-bindings demo"
             execQ dshConn L.brokenLet
+-}
             disconnect c
         _     -> do
             putStrLn "L.q2"
