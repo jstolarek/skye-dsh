@@ -44,7 +44,6 @@ main = do
         [dsn] -> do
             c <- getConn dsn
             let dshConn = pgConn c
-{-
             putStrLn "No provenance"
             execQ dshConn NP.q1
             execQ dshConn NP.q1'
@@ -62,18 +61,18 @@ main = do
             execQ dshConn PK.q1'
             execQ dshConn PK.q1''
             execQ dshConn PK.q2
--}
+
             putStrLn "Lineage"
             execQ dshConn L.q1
-{-
             execQ dshConn L.q1'
             execQ dshConn L.q1''
             execQ dshConn L.q2
             putStrLn "Lineage: FL primitves"
-            execQ dshConn L.q1map
+--            execQ dshConn L.q1map
             execQ dshConn L.q1append
-            execQ dshConn L.q1reverse
+--            execQ dshConn L.q1reverse
 
+{-
             putStrLn "Lineage, polymorphic keys"
             execQ dshConn LP.q1
             execQ dshConn LP.q1'
