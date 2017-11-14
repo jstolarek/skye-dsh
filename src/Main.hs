@@ -72,13 +72,13 @@ main = do
             execQ dshConn L.q1append
 --            execQ dshConn L.q1reverse
 
-{-
             putStrLn "Lineage, polymorphic keys"
             execQ dshConn LP.q1
             execQ dshConn LP.q1'
             execQ dshConn LP.q1''
             execQ dshConn LP.q2
 
+{-
             putStrLn "Lineage, nested"
             execQ dshConn L.qNested
 
