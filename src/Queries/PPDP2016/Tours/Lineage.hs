@@ -32,25 +32,6 @@ q1'' = lineage lineageKey NP.q1''
 q2 :: Q [Lineage (Text, (Text, Text)) Integer]
 q2 = lineage lineageKey NP.q2
 
--- JSTOLAREK: broken at the moment
-{-
--- Nested lineage
-matchingAgencies :: Q Text -> Q [(Text, Text)]
-matchingAgencies name =
-    [ tup2 (a_nameQ a) (a_phoneQ a)
-    | a <- agencies
-    , a_nameQ a == name
-    ]
-
-qNested :: Q (LT [(Text, LT [(Text, Text)] Integer)] Integer)
-qNested = lineage lineageKey
-                  [ tup2 (et_nameQ et) a
-                  | et <- externalTours
-                  , et_typeQ et == "boat"
-                  , let a = lineage lineageKey
-                                    (matchingAgencies (et_nameQ et))
-                  ]
--}
 -- FL primitives
 
 q1map :: Q [Lineage Text Integer]
@@ -59,10 +40,11 @@ q1map = lineage lineageKey (map fst NP.q1)
 q1append :: Q [Lineage (Text, Text) Integer]
 q1append = lineage lineageKey (append NP.q1 NP.q1)
 
-q1reverse :: Q [Lineage (Text, Text) Integer]
-q1reverse = lineage lineageKey (reverse NP.q1)
+-- No longer works because new DSH backend does not implement reverse primitive
+-- q1reverse :: Q [Lineage (Text, Text) Integer]
+-- q1reverse = lineage lineageKey (reverse NP.q1)
 
--- Exposing lineage bug
+-- Exposing lineage limitation
 
 agenciesNames :: Q [Text]
 agenciesNames = [ a_nameQ a | a <- agencies ]

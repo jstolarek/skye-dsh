@@ -68,9 +68,8 @@ main = do
             execQ dshConn L.q1''
             execQ dshConn L.q2
             putStrLn "Lineage: FL primitves"
---            execQ dshConn L.q1map
+            execQ dshConn L.q1map
             execQ dshConn L.q1append
---            execQ dshConn L.q1reverse
 
             putStrLn "Lineage, polymorphic keys"
             execQ dshConn LP.q1
@@ -79,9 +78,6 @@ main = do
             execQ dshConn LP.q2
 
 {-
-            putStrLn "Lineage, nested"
-            execQ dshConn L.qNested
-
             putStrLn "Lineage bug"
             execQ dshConn L.lineageBug
             putStrLn "Lineage - broken let-bindings demo"
