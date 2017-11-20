@@ -11,11 +11,12 @@ import           Database.DSH.Backend
 import           Database.DSH.Backend.Sql
 import           Database.DSH.Compiler
 
-import qualified Queries.PPDP2016.Tours.NoProv            as NP
-import qualified Queries.PPDP2016.Tours.WhereProv         as WP
-import qualified Queries.PPDP2016.Tours.WhereProvPolyKeys as PK
-import qualified Queries.PPDP2016.Tours.Lineage           as L
-import qualified Queries.PPDP2016.Tours.LineagePolyKeys   as LP
+import qualified Queries.PPDP2016.Tours.NoProv               as NP
+import qualified Queries.PPDP2016.Tours.WhereProv            as WP
+import qualified Queries.PPDP2016.Tours.WhereProvPolyKeys    as PK
+import qualified Queries.PPDP2016.Tours.Lineage              as L
+import qualified Queries.PPDP2016.Tours.LineagePolyKeys      as LP
+import qualified Queries.PPDP2016.Tours.LineageWhereProvComp as LWP
 
 
 getConn :: String -> IO Connection
@@ -77,6 +78,8 @@ main = do
             execQ dshConn LP.q1''
             execQ dshConn LP.q2
 
+            putStrLn "Lineage and where-provenance composition, polymorphic keys"
+            execQ dshConn LWP.q1
 {-
             putStrLn "Lineage bug"
             execQ dshConn L.lineageBug
