@@ -7,7 +7,6 @@
 module Schema.PPDP2016.Tours.PolyKeys where
 
 import           Database.DSH
-import           Database.DSH.Provenance
 import           Database.Skye.Common ()
 import           Data.List.NonEmpty
 

@@ -10,4 +10,3 @@ type WhereProvI a = WhereProv a Integer
 
 instance Default Text where
     def = pack ""
-

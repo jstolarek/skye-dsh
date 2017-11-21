@@ -6,7 +6,6 @@
 module Schema.PPDP2016.Tours.WhereProv where
 
 import           Database.DSH
-import           Database.DSH.Provenance
 import           Database.Skye.Common
 import           Data.List.NonEmpty
 
