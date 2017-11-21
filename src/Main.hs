@@ -67,9 +67,10 @@ main = do
             execQ dshConn L.q1'
             execQ dshConn L.q1''
             execQ dshConn L.q2
+
             putStrLn "Lineage: FL primitves"
-            execQ dshConn L.q1map
-            execQ dshConn L.q1append
+            execQ dshConn L.mapFL
+            execQ dshConn L.appendFL
 
             putStrLn "Lineage, polymorphic keys"
             execQ dshConn LP.q1

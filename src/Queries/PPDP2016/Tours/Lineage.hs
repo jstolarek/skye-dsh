@@ -34,15 +34,19 @@ q2 = lineage lineageKey NP.q2
 
 -- FL primitives
 
-q1map :: Q [Lineage Text Integer]
-q1map = lineage lineageKey (map fst NP.q1)
+mapFL :: Q [Lineage Text Integer]
+mapFL = lineage lineageKey (map fst NP.q1)
 
-q1append :: Q [Lineage (Text, Text) Integer]
-q1append = lineage lineageKey (append NP.q1 NP.q1)
+appendFL :: Q [Lineage (Text, Text) Integer]
+appendFL = lineage lineageKey (append NP.q1 NP.q1)
 
--- No longer works because new DSH backend does not implement reverse primitive
--- q1reverse :: Q [Lineage (Text, Text) Integer]
--- q1reverse = lineage lineageKey (reverse NP.q1)
+-- Does not work because new DSH backend does not implement reverse primitive
+-- reverseFL :: Q [Lineage (Text, Text) Integer]
+-- reverseFL = lineage lineageKey (reverse NP.q1)
+
+-- Does not work because new DSH backend does not implement reverse primitive
+-- zipFL :: Q (LT [((Text, Text), (Text, Text))] Integer)
+-- zipFL = lineage lineageKey (zip NP.q1 NP.q1)
 
 -- Exposing lineage limitation
 
