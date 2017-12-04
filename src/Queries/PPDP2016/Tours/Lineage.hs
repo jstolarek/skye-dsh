@@ -56,4 +56,3 @@ appendFL = lineage lineageKey (append NP.q1 NP.q1)
 -- Does not work because DSH backend does not implement reverse primitive
 -- zipFL :: Q (LT [((Text, Text), (Text, Text))] Integer)
 -- zipFL = lineage lineageKey (zip NP.q1 NP.q1)
-
