@@ -32,7 +32,16 @@ q1'' = lineage lineageKey NP.q1''
 q2 :: Q [Lineage (Text, (Text, Text)) Integer]
 q2 = lineage lineageKey NP.q2
 
--- FL primitives
+-- lineageNoGuard exposes how we currently don't track lineage for guard
+-- expressions.  See "Language-integrated provenance in Haskell" paper for
+-- details.
+lineageNoGuard :: Q [Lineage Text Integer]
+lineageNoGuard = lineage lineageKey
+                         [ et_nameQ et
+                         | et <- externalTours
+                         , et_nameQ et `elem` [ a_nameQ a | a <- agencies ] ]
+
+-- some FL primitives
 
 mapFL :: Q [Lineage Text Integer]
 mapFL = lineage lineageKey (map fst NP.q1)
@@ -40,25 +49,11 @@ mapFL = lineage lineageKey (map fst NP.q1)
 appendFL :: Q [Lineage (Text, Text) Integer]
 appendFL = lineage lineageKey (append NP.q1 NP.q1)
 
--- Does not work because new DSH backend does not implement reverse primitive
+-- Does not work because DSH backend does not implement reverse primitive
 -- reverseFL :: Q [Lineage (Text, Text) Integer]
 -- reverseFL = lineage lineageKey (reverse NP.q1)
 
--- Does not work because new DSH backend does not implement reverse primitive
+-- Does not work because DSH backend does not implement reverse primitive
 -- zipFL :: Q (LT [((Text, Text), (Text, Text))] Integer)
 -- zipFL = lineage lineageKey (zip NP.q1 NP.q1)
 
--- Exposing lineage limitation
-
-agenciesNames :: Q [Text]
-agenciesNames = [ a_nameQ a | a <- agencies ]
-
-lineageBug :: Q [Lineage Text Integer]
-lineageBug = lineage lineageKey
-                     [ et_nameQ et
-                     | et <- externalTours
-                     , et_nameQ et `elem` agenciesNames ]
-
-brokenLet :: Q (LT [Agency] Integer)
-brokenLet = lineage lineageKey
-                    [ a | a <- agencies, a_nameQ a == "EdinTours" ]

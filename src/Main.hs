@@ -72,20 +72,17 @@ main = do
             execQ dshConn L.mapFL
             execQ dshConn L.appendFL
 
+            putStrLn "Lineage not tracked for guards"
+            execQ dshConn L.lineageNoGuard
+
             putStrLn "Lineage, polymorphic keys"
             execQ dshConn LP.q1
             execQ dshConn LP.q1'
             execQ dshConn LP.q1''
             execQ dshConn LP.q2
 
-{-
-            putStrLn "Lineage bug"
-            execQ dshConn L.lineageBug
-            putStrLn "Lineage - broken let-bindings demo"
-            execQ dshConn L.brokenLet
--}
             disconnect c
         _     -> do
             putStrLn "L.q2"
-            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.brokenLet)
+            mapM_ (\(f, h) -> putStrLn h >> f optResugar L.q2)
                   debugFunctions
