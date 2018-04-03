@@ -3,11 +3,13 @@ Skye-DSH
 
 Skye-DSH is an experimental extension of [Database-Supported
 Haskell](https://github.com/ulricha/dsh) with support for provenance tracking as
-described in "Language-integrated Provenance in Haskell" by Jan Stolarek and
-James Cheney.  This project is a meta-project that uses git submodules to group
-together forks of several DSH subprojects.  The main development branch is
-`provenance` in the `dsh` submodule.  Skye-DSH currently supports
-*where-provenance* and *lineage* tracking.
+described in ["Language-integrated Provenance in
+Haskell"](https://arxiv.org/abs/1803.10202), Jan Stolarek and James Cheney, The
+Art, Science, and Engineering of Programming, 2018, Vol. 2, Issue 3, Article 11.
+This project is a meta-project that uses git submodules to group together forks
+of several DSH subprojects.  The main development branch is `provenance` in the
+`dsh` submodule.  Skye-DSH currently supports *where-provenance* and *lineage*
+tracking.
 
 
 Building and running
